@@ -72,10 +72,9 @@ WSGI_APPLICATION = 'slipstream.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
-import dj_database_url
-DATABASES = {
-    'default': dj_database_url.config(conn_max_age=500)
-}
+import dj_database_url   ####not working for my case
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config()
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
