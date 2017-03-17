@@ -25,7 +25,7 @@ SECRET_KEY = 'ew!=9l5!+mlx$bic&=v!m_2#3$^#4=nze2r8#d-l2m^pbo&ei('
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['fast-atoll-11779.herokuapp.com'];
 
 
 # Application definition
