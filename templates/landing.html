@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block content %}
+
+{% if False == user.is_authenticated %}
+<div class="row">
+	<div class="col-md-3">
+		<a href="{% url 'login' %}"
+			class="btn btn-primary btn-lg btn-block"
+			role="button">
+			Login
+		</a>
+		<a href="{% url 'registration_register' %}"
+			class="btn btn-primary btn-lg btn-block"
+			role="button">
+			Sign up
+		</a>
+	</div>
+</div>
+{% else %}
+<div class="row">
+	<div class="col-md-4">
+		<h2>Join a Campaign</h2>
+		<div id='access_code_help'>
+			To join an existing campaign, you'll need to get the eight character
+			<em>access code</em> from the campaigns owner.
+			{% if access_code_error %}
+			<p class="text-danger">Sorry, but we couldn't find a campaign with
+			that access code.</p>
+			{% endif %}
+		</div>
+		<form action="{% url 'new_character' %}"
+			{% if access_code_error %}
+			  class="form-group has-error"
+			{% endif %}
+			  method="get"
+			  accept-charset="utf-8">
+			<label for="access_code_field">Access Code</label>
+			<input id="access_code_field"
+				   name="access_code_field"
+				   class="form-control mx-sm-3"
+ 				   aria-describedby="access_code_help">
+			</br>
+    		<button type="submit"
+				class="btn btn-primary btn-lg"
+				role="button">
+				Join a campaign
+			</button>
+		</form>
+		<hr>
+		<h2>Create a Campaign</h2>
+		<p>...Or create a new campaign.</p>
+
+		<a href="{% url 'new_campaign' %}"
+			class="btn btn-primary btn-lg"
+			role="button">
+			Create a campaign
+		</a>
+	</div>
+
+	<div class="col-md-4">
+		<h2>Campaigns which you own</h2>
+
+			{% for camp in campaign_list%}
+			<div class="well">
+				<h4>{{ camp.name }}</h4>
+				<p>Rule set: {{camp.rule_set.name}}</p>
+				<p>Access code: {{camp.access_code}}</p>
+				<a href="{% url 'gm_session' campaign_pk=camp.pk %}"
+					class="btn btn-lg btn-primary"
+					role="button">
+					Open
+				</a>
+
+			</div>
+		{% empty %}
+			You have no active games...
+		{% endfor %}
+
+	</div>
+
+	<div class="col-md-4">
+		<h2>Campaigns in which you play</h2>
+		{% if char_list %}
+			<table>
+				<tr>
+					<th>Campaign</th>
+					<th>Character</th>
+				</tr>
+				{% for char in char_list%}
+				<tr>
+					<td>
+			<a href="/slip/session/{{ char.campaign.id }}/{{ char.id }}">
+							{{ char.campaign.name }}
+						</a>
+					</td>
+					<td>{{ char.name}}</td>
+				</tr>
+				{% endfor %}
+			</table>
+		{% else %}
+			You have no active games...
+		{% endif %}
+	</div>
+
+	{% endif %}
+</div>
+
+{% endblock %}

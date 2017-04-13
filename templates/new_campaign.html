@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Campaign{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+</script>
+{% endblock %}
+
+{% block content %}
+<h2>New Campaign</h2>
+
+<form action="/rpg/create_campaign_and_redirect">
+Rule set:<br>
+<select name="rule_set_field">
+{% for rs in rule_sets %}
+	<option value="{{rs.pk}}">{{rs.name}}</option>	
+{% endfor %}
+</select>
+<br>
+Campaign name:<br>
+	<input type="text" name="campaign_name_field" value="">	
+	<button type="submit">Create</button>
+</form>
+
+{% endblock %}

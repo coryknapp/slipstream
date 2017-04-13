@@ -1,0 +1,58 @@
+body{
+}
+
+span.pos-stat{
+	color: blue;
+}
+
+span.neg-stat{
+	color: red;
+}
+
+.little-padding{
+	padding: 10pt;
+}
+
+.stat-and-label-box{
+	border-style: solid;
+	border-color: gray;
+	padding: 4pt;
+	margin: 4pt;
+}
+
+img.effect-icon{
+	width: 42;
+	height: 42;
+}
+
+.bed{
+	margin: 10pt;
+
+	display: inline-block;
+	border-style: solid;
+	border-width: 1pt;
+	width: 32pt;
+	height: 32pt;
+}
+
+.label-bed-container{
+	display: inline-block;
+	padding: 10pt;
+	align-content: center;
+}
+
+.label-bed-label{
+	align-content: center;
+}
+
+
+.draggables{
+	font-size: 16pt;
+	display: inline-block;
+	position: relative;
+	border: 1px solid powderblue;
+	width: 32pt;
+	height: 32pt;
+	text-align: center;
+    vertical-align: middle;
+}

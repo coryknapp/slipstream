@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Campaign{% endblock %}
+
+{% block script %}
+<link rel="stylesheet" href="/static/css/style.css" type="text/css" media="all" />
+
+<script src="/static/js/vue.js" charset="utf-8"></script>
+
+<script type="text/javascript">
+
+rules = {};
+
+rules.class_collections_order = [
+	{% for cc in class_collections %}
+		{{cc.class_collection.pk}},
+	{% endfor %}
+];
+
+rules.class_collections = {
+	{% for cc in class_collections %}
+		{{cc.class_collection.pk}}: {
+			name: "{{cc.class_collection.name}}",
+			short_description: "{{cc.class_collection.short_description}}",
+			classes: [
+				{% for c in cc.classes %}
+					{{c.pk}},					
+				{% endfor %}
+				],
+		},
+	{% endfor %}
+};
+
+rules.classes = {
+{% for cc in class_collections %}
+	{% for c in cc.classes %}
+		{{c.pk}} : {
+			name: "{{c.name}}",
+			description: "{{c.short_description}}",
+			modifiers: {
+			{% for m in c.statistic_modifiers.get_all_modifiers %}
+				{{ m.statistic_pk }}: {{m.value}},
+			{% endfor %}						
+			},
+			class_effects: [
+			{% for e in c.class_effects.all %}
+				{{ e.pk }},
+			{% endfor %}
+			],
+		},
+	{% endfor %}
+{% endfor %}
+}
+
+rules.statistics = {
+	{% for s in stat_list %}
+		{{s.pk}}: {
+			name: "{{s.name}}",
+			description: "{{s.description}}",
+		},
+	{% endfor %}
+}; //end statistic dict
+
+rules.statistics_order = [
+	{% for s in stat_list %}
+		{{s.pk}},
+	{% endfor %}
+];
+
+
+rules.effects = {
+	{% for e in effects_list %}
+		{{e.pk}}: {
+			name: "{{e.name}}",
+			description: "{{e.description}}",
+			icon_url: "{{e.icon_url}}",
+		},
+	{% endfor %}
+};
+
+rules.allocatable_stat_values = [ 4, 8, 11, 23];
+
+</script>
+<script src="/static/js/new_character.js" charset="utf-8"></script>
+
+{% endblock %}
+
+{% block content %}
+<h2>New Character</h2>
+
+<form action=".">
+
+{% verbatim %}
+<div id="app">
+
+
+
+	<div class="row">
+		<div class="well">
+			<h4>Statistics</h4>
+			<statistic-allocation-box
+				:rules="rules"
+				@allocations_changed="allocations_changed"></statistic-allocation-box>
+			<statistics-summary-table
+				:rules="rules"			
+				@modifiers_changed="modifiers_changed"
+				ref="statisticsSummaryTable">
+			</statistics-summary-table>
+
+		</div>
+
+
+	</div>
+	<div class="row">
+
+		<div v-for="cc in rules.class_collections_order" class="col-md-6">
+			<class-selector
+				:cc_pk="cc"
+				:rules="rules"
+				@modifiers_changed="modifiers_changed">
+			</class-selector>
+		</div>
+
+	</div>
+</div>
+
+</form>
+{% endverbatim %}
+
+{% endblock %}

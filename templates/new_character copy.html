@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Campaign{% endblock %}
+
+{% block script %}
+<script src="/static/js/vue.js" charset="utf-8"></script>
+<script type="text/javascript">
+
+class_descriptions = {
+	{% for cc in class_collections %}
+		{{cc.class_collection.pk}} : {
+			{% for c in cc.classes %}
+			{{c.pk}} : "{{c.short_description}}",
+			{% endfor %}
+		},
+	{% endfor %}
+};
+
+{% autoescape off %}
+class_statistic_modifiers = {
+	{% for cc in class_collections %}
+		{{cc.class_collection.pk}} : {
+			{% for c in cc.classes %}
+				{{c.pk}} : {{c.get_JSON_of_all_modifiers}},
+			{% endfor %}
+		},
+	{% endfor %}
+};
+{% endautoescape %}
+
+class_selections = { };
+
+function make_class_selection(cc_pk, c_pk ) {
+	class_selections[cc_pk] = c_pk;
+
+	document.getElementById('description_box_'+cc_pk).innerHTML =
+		class_descriptions[cc_pk][c_pk];
+
+	//keep a count so we know when all classes have been selected
+	var count = 0;
+	for (var i in class_selections) {
+   		if (class_selections.hasOwnProperty(i)) count++;
+	}
+
+	// clear all stats for this class collection
+	var stat_cells = document.getElementsByClassName('stat_cell_c_'+cc_pk);
+	for(var i = stat_cells.length; i-- > 0;){ 
+		stat_cells[i].innerHTML = '';
+	}
+
+	var stat_mods = class_statistic_modifiers[cc_pk][c_pk];	
+	for(var i = stat_mods.length; i-- > 0;){
+console.log(stat_mods[i]);
+		var stat = stat_mods[i]['statistic_pk'];
+		var value = stat_mods[i]['value'];
+		document.getElementById("stat_cell_"+cc_pk+"_"+stat).innerHTML =
+			value;
+	}
+	
+app.message = "there!";
+
+	if(count === {{class_collections_size}}){
+		//alert('boo');
+	}
+}
+
+onload = function (){
+app = new Vue({
+  el: '#stat_table_div',
+  data: {
+    message: 'Hello Vue!'
+  }
+});
+
+}
+
+</script>
+{% endblock %}
+
+{% block content %}
+<h2>New Character</h2>
+
+<form action=".">
+
+
+
+<div class="row">
+	{% for cc in class_collections %}
+	<div class="col-md-4">
+		<div class="well">
+			<h4>{{cc.class_collection.name}}</h4>
+			<p>{{cc.class_collection.short_description}}</p>
+			<label for="some_name" class="hidden">
+				{{cc.class_collection.name}}
+			</label>	
+			<select name="some_name" id="some_name" size="5" class="form-control">
+				{% for c in cc.classes %}
+				<option
+					value="option"
+					onclick="make_class_selection({{cc.class_collection.pk}}, {{c.pk}});">
+					{{c.name}}
+				</option>
+				{% endfor %}
+			</select>
+				<div id='description_box_{{cc.class_collection.pk}}'>
+				
+			</div>
+		</div>
+	</div>
+
+	{% endfor %}
+</div>
+
+<div class="row">
+
+	<h4>Statistics</h4>
+
+{% verbatim %}
+	<div id="stat_table_div">
+  {{ message }}
+	</div>
+{% endverbatim %}
+
+
+<div class="well">
+	<table class="table-bordered">
+		<thead>
+			<th>X</th>			
+			{% for s in stat_list %}
+			<th>{{s.name}}</th>
+			{% endfor %}
+		</thead>
+		{% for c in class_collections %}
+		<tr>
+			<td>{{c.class_collection.name}}</td>
+			{% for s in stat_list %}
+				<td
+					id="stat_cell_{{c.class_collection.pk}}_{{s.id}}"
+					class="stat_cell stat_cell_c_{{c.class_collection.pk}}">
+				</td>
+			{% endfor %}
+		</tr>
+		{% endfor %}
+	</table>
+	</div>
+</div>
+
+</form>
+{% endblock %}
