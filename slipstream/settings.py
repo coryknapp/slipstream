@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 
 import os
 
+# define if on heroku environment
+ON_HEROKU = 'ON_HEROKU' in os.environ
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,8 +27,9 @@ SECRET_KEY = 'ew!=9l5!+mlx$bic&=v!m_2#3$^#4=nze2r8#d-l2m^pbo&ei('
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['fast-atoll-11779.herokuapp.com'];
+ALLOWED_HOSTS = ['fast-atoll-11779.herokuapp.com', '127.0.0.1'];
 
+LOGIN_REDIRECT_URL = '/'
 
 # Application definition
 
@@ -36,6 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'registration',
+    'rpg',    
 ]
 
 MIDDLEWARE = [
@@ -53,7 +59,9 @@ ROOT_URLCONF = 'slipstream.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+                BASE_DIR + '/templates/',
+            ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -72,9 +80,17 @@ WSGI_APPLICATION = 'slipstream.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
-import dj_database_url   ####not working for my case
-DATABASES = {}
-DATABASES['default'] = dj_database_url.config()
+if ON_HEROKU:
+    import dj_database_url   ####not working for my case
+    DATABASES = {}
+    DATABASES['default'] = dj_database_url.config()
+else:
+    DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mydatabase',
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators
