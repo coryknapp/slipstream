@@ -19,7 +19,7 @@ from django.contrib.auth import views as auth_views
 
 import registration
 
-import rpg
+import rpg.views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
