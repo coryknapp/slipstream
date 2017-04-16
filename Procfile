@@ -1,1 +1,1 @@
-web: gunicorn slipstream:application
+web: gunicorn slipstream.wsgi:application
