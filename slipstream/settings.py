@@ -27,7 +27,7 @@ SECRET_KEY = 'ew!=9l5!+mlx$bic&=v!m_2#3$^#4=nze2r8#d-l2m^pbo&ei('
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['fast-atoll-11779.herokuapp.com', '127.0.0.1'];
+ALLOWED_HOSTS = ['fast-atoll-11779.herokuapp.com', '127.0.0.1', '0.0.0.0'];
 
 LOGIN_REDIRECT_URL = '/'
 
@@ -51,7 +51,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware'
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'slipstream.urls'
