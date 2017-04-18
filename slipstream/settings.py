@@ -81,16 +81,16 @@ WSGI_APPLICATION = 'slipstream.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
-if ON_HEROKU:
-    import dj_database_url   ####not working for my case
-    DATABASES = {}
-    DATABASES['default'] = dj_database_url.config()
-else:
-    DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'mydatabase',
-    }
+# if ON_HEROKU:
+import dj_database_url   ####not working for my case
+DATABASES = {}
+DATABASES['default'] = dj_database_url.config()
+# else:
+#     DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': 'mydatabase',
+#     }
 }
 
 # Password validation
