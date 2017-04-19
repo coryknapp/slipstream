@@ -17,7 +17,6 @@ from models import ClassCollection
 from models import StatisticInstanceSet
 from models import Effect
 
-# Create your views here.
 def landing_page_view(request, access_code_error = False):
     context = {
             'user' : request.user,
@@ -25,6 +24,8 @@ def landing_page_view(request, access_code_error = False):
             } 
     if request.user.is_authenticated:
         context['campaign_list'] = Campaign.objects.filter(owning_user=request.user)
+        context['character_list'] = Character.objects.filter(owning_user=request.user)
+
 
     return render(request, 'landing.html', context)
 
@@ -90,6 +91,20 @@ def gm_session_view(request, campaign_pk):
     return render(request, 'gm_session.html', context)
 
 @login_required
+def session_view(request, character_pk):
+    character = Character.objects.get(pk=character_pk)
+    rule_set = character.campaign.rule_set
+    context = {
+        'character': character,
+        'statistics': Statistic.objects.filter(
+            rule_set=rule_set
+            ).order_by('selection_order'),
+        'rule_set': rule_set,
+    }
+
+    return render(request, 'session.html', context)
+
+@login_required
 def new_character_view(request):
     """
     Display the form for character creation.
@@ -148,9 +163,84 @@ def new_character_view(request):
         'class_collections_size': len(class_collections),        
         'campaign': campaign,
     }
-    print(context) 
 
     return render(request, 'new_character.html', context)
+
+@login_required
+def create_character_and_redirect(request):
+    """
+    
+    Directed from:
+    new_character_view
+
+    Directs to:
+    campaign_player_view,
+
+    Request object:
+    * requires a authenticated user
+    * TODO a whole bunch of stuff
+
+    Associated html templates:
+    None (should redirect)
+    
+    Side effects:
+    If everything is valid, create a new character object
+    """
+
+
+    #get the campaign TODO validate that this user should be able to
+    #join this campaign
+    campaign_pk = int(request.GET.get('campaign_pk', None))
+    campaign_access_code = request.GET.get('campaign_access_code')
+
+    #get the campaign with this pk and access code.  We don't have to worry about
+    #not finding it, because if that's the case, the user is doing something 
+    #they're not supposed to be doing
+    campaign = Campaign.objects.get(pk=campaign_pk, access_code=campaign_access_code)
+    rule_set = campaign.rule_set
+
+    #don't bother validating because, again, the if the name is missing then the
+    #user is mucking around where they don't belong.  This should have been validated
+    #on the front end.
+    character_name = request.GET.get('character_name', 'The Nameless')
+
+    #for each class collection, look for a field that matches it's pk 
+    #make a dictionary of class_collection pks to class pks
+    class_map = {}
+    for cc in ClassCollection.objects.filter(rule_set=rule_set):
+        class_map[cc.pk] = int(request.GET.get('class_collection_'+str(cc.pk), None))
+    
+    #for each stat, look for a field that matches it's pk 
+    #make a dictionary of stat pks to allocations
+    allocations = {}
+    for s in Statistic.objects.filter(rule_set=rule_set):
+        allocations[s.pk] = int(request.GET.get('stat_bed_'+str(s.pk), None))
+    
+    #create the character 
+    new_character = Character(
+            owning_user=request.user,
+            name=character_name,
+            campaign=campaign)
+    new_character.save()
+    
+    #set up a new StatisticInstanceSet for this chars base stats
+    new_stat_set = StatisticInstanceSet()
+    new_stat_set.save()
+    for s_pk, value in allocations.items():
+        new_stat_set.set_modifier(Statistic.objects.get(pk=s_pk), allocations[s_pk]);
+    
+    #add the classes to the character, and build the generated description
+    generated_description = ""
+    for k, c_pk in class_map.items():
+        class_object = Class.objects.get(pk=c_pk)
+        generated_description += class_object.name + " "
+        new_character.classes.add(class_object)
+    new_character.generated_description = generated_description;
+    new_character.save()
+
+    print(request.GET)
+    return HttpResponseRedirect(reverse('session', args=[new_character.pk]))
+
 
 def populate(request):
 

@@ -6,6 +6,10 @@ from django.contrib.auth.models import User
 
 import json
 
+#define a couple properties we reuse again and again
+MAX_DESCRIPTION_LENGTH = 800
+MAX_NAME_LENGTH = 100
+
 def HasStatisticModifier(class_object):
     """
     class decorator for models that are associated with a rule_set
@@ -16,7 +20,7 @@ def HasStatisticModifier(class_object):
 
 class RuleSet(models.Model):
     name = models.CharField(
-            max_length=200
+            max_length=MAX_NAME_LENGTH
             )
 
 class Statistic(models.Model):
@@ -26,8 +30,8 @@ class Statistic(models.Model):
 
     rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
 
-    name = models.CharField(max_length=200)       
-    description = models.CharField( max_length=200)    
+    name = models.CharField(max_length=MAX_NAME_LENGTH)       
+    description = models.CharField( max_length=MAX_DESCRIPTION_LENGTH)    
     selection_order = models.IntegerField()
 
 class StatisticInstance(models.Model):
@@ -74,15 +78,23 @@ class StatisticInstanceSet(models.Model):
 
 class Character(models.Model):
     owning_user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=MAX_NAME_LENGTH)
     campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE)
+
+    base_statistics = models.ForeignKey('StatisticInstanceSet', null=True)    
+    classes = models.ManyToManyField('Class')
+
+    #this field should be generated on character creation.  It should be
+    #a short phrase based on the it's classes.  Simpler and cheaper to
+    #generate it once instead of every time. 
+    generated_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
 
 class Campaign(models.Model):
 
     rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
 
     name = models.CharField(
-            max_length=200
+            max_length=MAX_NAME_LENGTH
             )
     access_code = models.CharField(max_length=8)
     owning_user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -100,8 +112,8 @@ class Class(models.Model):
     rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
     collection = models.ForeignKey('ClassCollection', on_delete=models.CASCADE)
     
-    name = models.CharField(max_length=200)
-    short_description = models.CharField(max_length=200)
+    name = models.CharField(max_length=MAX_NAME_LENGTH)
+    short_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
 
     statistic_modifiers = models.ForeignKey('StatisticInstanceSet', null=True)    
 
@@ -114,8 +126,8 @@ class ClassCollection(models.Model):
     """
     rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
 
-    name = models.CharField(max_length=200)
-    short_description = models.CharField(max_length=200)
+    name = models.CharField(max_length=MAX_NAME_LENGTH)
+    short_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
     selection_order = models.IntegerField(default=0)
 
 class Effect(models.Model):
@@ -125,11 +137,11 @@ class Effect(models.Model):
     """
     rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
 
-    name = models.CharField(max_length=200)
-    description = models.CharField(max_length=200)
+    name = models.CharField(max_length=MAX_NAME_LENGTH)
+    description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
 
     #TODO store icon data in a database blob, rather then a url
-    icon_url = models.CharField(max_length=20)
+    icon_url = models.CharField(max_length=MAX_NAME_LENGTH)
 
     statistic_modifiers = models.ForeignKey('StatisticInstanceSet', null=True)    
 

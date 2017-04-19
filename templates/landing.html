@@ -60,49 +60,48 @@
 	</div>
 
 	<div class="col-md-4">
-		<h2>Campaigns which you own</h2>
+		<h2>Your Characters</h2>
 
-			{% for camp in campaign_list%}
-			<div class="well">
-				<h4>{{ camp.name }}</h4>
-				<p>Rule set: {{camp.rule_set.name}}</p>
-				<p>Access code: {{camp.access_code}}</p>
-				<a href="{% url 'gm_session' campaign_pk=camp.pk %}"
-					class="btn btn-lg btn-primary"
-					role="button">
-					Open
-				</a>
+		{% for char in character_list%}
+		<div class="well">
+			<h4>
+				{{ char.name }}
+				<small>{{char.campaign.name}}</small>
+			</h4>
+			<p>{{char.generated_description}}</p>
+			<a href="{% url 'session' character_pk=char.pk %}"
+				class="btn btn-lg btn-primary"
+				role="button">
+				Open
+			</a>
 
-			</div>
+		</div>
+		{% empty %}
+			You have no active games...
+		{% endfor %}
+	</div>
+
+	<div class="col-md-4">
+		<h2>Your Campaigns</h2>
+
+		{% for camp in campaign_list%}
+		<div class="well">
+			<h4>{{ camp.name }}</h4>
+			<p>Rule set: {{camp.rule_set.name}}</p>
+			<p>Access code: {{camp.access_code}}</p>
+			<a href="{% url 'gm_session' campaign_pk=camp.pk %}"
+				class="btn btn-lg btn-primary"
+				role="button">
+				Open
+			</a>
+
+		</div>
 		{% empty %}
 			You have no active games...
 		{% endfor %}
 
 	</div>
 
-	<div class="col-md-4">
-		<h2>Campaigns in which you play</h2>
-		{% if char_list %}
-			<table>
-				<tr>
-					<th>Campaign</th>
-					<th>Character</th>
-				</tr>
-				{% for char in char_list%}
-				<tr>
-					<td>
-			<a href="/slip/session/{{ char.campaign.id }}/{{ char.id }}">
-							{{ char.campaign.name }}
-						</a>
-					</td>
-					<td>{{ char.name}}</td>
-				</tr>
-				{% endfor %}
-			</table>
-		{% else %}
-			You have no active games...
-		{% endif %}
-	</div>
 
 	{% endif %}
 </div>
