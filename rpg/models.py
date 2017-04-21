@@ -10,18 +10,12 @@ import json
 MAX_DESCRIPTION_LENGTH = 800
 MAX_NAME_LENGTH = 100
 
-def HasStatisticModifier(class_object):
-    """
-    class decorator for models that are associated with a rule_set
-    """
-    class_object.statistic_modifiers = models.ManyToManyField('StatisticInstance')
-
-    return class_object
-
 class RuleSet(models.Model):
     name = models.CharField(
             max_length=MAX_NAME_LENGTH
             )
+    def __str__(self):
+        return 'RuleSet: {}'.format(self.name)
 
 class Statistic(models.Model):
     """
@@ -33,10 +27,15 @@ class Statistic(models.Model):
     name = models.CharField(max_length=MAX_NAME_LENGTH)       
     description = models.CharField( max_length=MAX_DESCRIPTION_LENGTH)    
     selection_order = models.IntegerField()
+    def __str__(self):    
+        return 'Statistic: {}'.format(self.name)
 
 class StatisticInstance(models.Model):
     statistic = models.ForeignKey('Statistic', on_delete=models.CASCADE)
     value = models.IntegerField(default=0)
+    def __str__(self):    
+        return '%+d %s ' % (self.value, self.statistic.name)
+
 
 class StatisticInstanceSet(models.Model):
     """
@@ -52,7 +51,6 @@ class StatisticInstanceSet(models.Model):
             stat_instance.value = value
             stat_instance.save()
         except StatisticInstance.DoesNotExist:
-            print('CREATING STAT')
             self.statistic_modifiers.create(statistic=stat_object, value=value)
 
     def get_modifier(self, stat_object):
@@ -75,6 +73,13 @@ class StatisticInstanceSet(models.Model):
                 'value' : sm.value
                 })
         return sm_list
+    def __str__(self):    
+        sm_text = ""
+        for sm in self.statistic_modifiers.all():
+            sm_text += str(sm)
+        return sm_text
+
+
 
 class Character(models.Model):
     owning_user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -88,6 +93,8 @@ class Character(models.Model):
     #a short phrase based on the it's classes.  Simpler and cheaper to
     #generate it once instead of every time. 
     generated_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
+    def __str__(self):    
+        return '%s the %s ' % (self.name, self.generated_description)
 
 class Campaign(models.Model):
 
@@ -102,6 +109,8 @@ class Campaign(models.Model):
     active_session = models.BooleanField(default=False)
 
     world_time = models.IntegerField(default=0)
+    def __str__(self):    
+        return '%s' % (self.name)
 
 class Class(models.Model):
     """
@@ -118,6 +127,8 @@ class Class(models.Model):
     statistic_modifiers = models.ForeignKey('StatisticInstanceSet', null=True)    
 
     class_effects = models.ManyToManyField('Effect')
+    def __str__(self):    
+        return '%s' % (self.name)
 
 class ClassCollection(models.Model):
     """
@@ -129,6 +140,8 @@ class ClassCollection(models.Model):
     name = models.CharField(max_length=MAX_NAME_LENGTH)
     short_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
     selection_order = models.IntegerField(default=0)
+    def __str__(self):    
+        return '%s' % (self.name)
 
 class Effect(models.Model):
     """
@@ -144,4 +157,6 @@ class Effect(models.Model):
     icon_url = models.CharField(max_length=MAX_NAME_LENGTH)
 
     statistic_modifiers = models.ForeignKey('StatisticInstanceSet', null=True)    
+    def __str__(self):    
+        return '%s' % (self.name)
 
