@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{character.name}}{% endblock %}
+
+{% block script %}
+
+<script src="/static/js/vue.js" charset="utf-8"></script>
+<script type="text/javascript">
+
+rules = {};
+
+rules.modifier_map = [
+	03 , -3, //3 and under, map to -3
+	05 , -2, // under 5, map to -2
+	08 , -1,
+	12 , 0,
+	15 , 1,
+	17 , 2,
+	18 , 3,
+]
+
+rules.statistics = {
+	{% for s in statistics %}
+		{{s.pk}}: {
+			name: "{{s.name}}",
+			description: "{{s.description}}",
+		},
+	{% endfor %}
+}; //end statistic dict
+
+rules.statistics_order = [
+	{% for s in statistics %}
+		{{s.pk}},
+	{% endfor %}
+];
+
+rules.classes = {
+	{% for c in character.classes.all %}
+		{{c.pk}}: {
+			name: "{{c.name}}",
+			statistic_modifiers: {
+				{% for s_mod in c.statistic_modifiers.get_all_modifiers %}
+					{{s_mod.statistic_pk}} : {{s_mod.value}},
+				{% endfor %}
+				},
+			class_collections_name: "{{c.collection.name}}",
+		},
+	{% endfor %}
+};
+
+rules.effects = {
+	{% for e in effects%}
+		{{e.pk}}: {
+			name: "{{e.name}}",
+			description: "{{e.description}}",
+			icon_url: "{{e.icon_url}}",
+			statistic_modifiers: {
+				{% for s_mod in e.statistic_modifiers.get_all_modifiers %}
+					s_mod.statistic.pk : s_mod.value,
+				{% endfor %}
+				},
+			},
+	{% endfor %}
+};
+
+character = {};
+
+character.base_statistics = {
+	{% for bs in base_statistics %}
+		{{bs.statistic_pk}} : {{bs.value}},
+	{% endfor %}
+};
+
+character.effects = [
+	{% for e in effects %}
+		{{e.pk}},
+	{% endfor %}
+];
+
+character.classes = [
+	{% for c in character.classes.all %}
+		{{c.pk}},
+	{% endfor %}
+];
+
+</script>
+<script src="/static/js/session.js" charset="utf-8"></script>
+
+{% endblock %}
+
+{% block content %}
+<div class="container">
+	<div id="app">
+		<character-view
+			:rules="rules"
+			:character="character">
+	</div> {#end app#}
+</div>
+{% endblock %}
