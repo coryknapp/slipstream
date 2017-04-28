@@ -94,12 +94,28 @@ def gm_session_view(request, campaign_pk):
 def session_view(request, character_pk):
     character = Character.objects.get(pk=character_pk)
     rule_set = character.campaign.rule_set
+
+    #character stats come from base stats, and any modifiers from
+    #class or items
+    base_statistics = character.base_statistics.get_all_modifiers()
+    
+    #gather character effects from classes, and any loose effects the character
+    #might have
+    #TODO there must be a better way to do this using the built in models.
+    effects = [];
+    for c in character.classes.all():
+        print(c)
+        for e in c.class_effects.all():
+            print(e)
+            effects.append(e)
     context = {
         'character': character,
         'statistics': Statistic.objects.filter(
             rule_set=rule_set
             ).order_by('selection_order'),
         'rule_set': rule_set,
+        'base_statistics': base_statistics,
+        'effects': effects,
     }
 
     return render(request, 'session.html', context)
@@ -227,8 +243,10 @@ def create_character_and_redirect(request):
     new_stat_set = StatisticInstanceSet()
     new_stat_set.save()
     for s_pk, value in allocations.items():
+        print(s_pk, value)
         new_stat_set.set_modifier(Statistic.objects.get(pk=s_pk), allocations[s_pk]);
-    
+    new_character.base_statistics = new_stat_set
+
     #add the classes to the character, and build the generated description
     generated_description = ""
     for k, c_pk in class_map.items():

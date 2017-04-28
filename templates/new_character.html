@@ -89,7 +89,16 @@ rules.allocatable_stat_values = [ 4, 8, 11, 23];
 {% block content %}
 <h2>New Character</h2>
 
-<form action=".">
+<form action="/rpg/create_character_and_redirect/">
+
+	<input type="hidden"
+		name="campaign_pk"
+		id="campaign_pk"
+		value="{{campaign.pk}}" />
+	<input type="hidden"
+		name="campaign_access_code"
+		id="campaign_access_code"
+		value="{{campaign.access_code}}" />
 
 {% verbatim %}
 <div id="app">
@@ -124,6 +133,10 @@ rules.allocatable_stat_values = [ 4, 8, 11, 23];
 
 	</div>
 </div>
+
+<input name="character_name" id="character_name" value="Glork" />
+
+<input type="submit" name="submit" id="su" value="" />
 
 </form>
 {% endverbatim %}

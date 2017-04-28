@@ -28,10 +28,18 @@ urlpatterns = [
         views.gm_session_view,
         name='gm_session'),
 
+    url(r'^session/(?P<character_pk>[0-9]+)/$',
+        views.session_view,
+        name='session'),
+
     #???
     url(r'^create_campaign_and_redirect/$',
         views.create_campaign_and_redirect,
         name='create_campaign_and_redirect'),
+
+    url(r'^create_character_and_redirect/$',
+        views.create_character_and_redirect,
+        name='create_character_and_redirect'),
 
 
     #for debugging

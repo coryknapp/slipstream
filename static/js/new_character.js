@@ -44,6 +44,13 @@ Vue.component('StatisticAllocationBox', {
 				<span class="label-bed-label">
 					{{rules.statistics[s_pk].name}}
 				</span>
+
+				<input type="hidden"
+					:name="'stat_bed_'+s_pk"
+					:id="'stat_bed_'+s_pk"
+					value="doop">
+				
+
 			</span>
 		</div>
 		</div>
@@ -58,10 +65,8 @@ Vue.component('StatisticAllocationBox', {
 	
 	methods: {
 		dragstart: function(){
-				console.log('---',event.target.dataset);
 			//is this draggable in labeled bed already?
 			var this_bed = event.target.parentNode;
-			console.log('---',this_bed.dataset.sPk);
 
 			if(this_bed.dataset.sPk){ //yes
 				delete this.allocations[parseInt(this_bed.dataset.sPk)];
@@ -89,6 +94,10 @@ Vue.component('StatisticAllocationBox', {
 			if(i >= 0){
 				this.allocations[event.target.dataset.sPk] =
 					parseInt(this.picked_up_node.innerHTML);
+				document.getElementById('stat_bed_'+event.target.dataset.sPk).value = 
+					this.allocations[event.target.dataset.sPk];
+				console.log(document.getElementById('stat_bed_'+event.target.dataset.sPk));
+				
 			} else {
 				//if it's not a `destination` we need to remove the pk from
 				//our allocations map, as the value is no longer allocated
@@ -124,10 +133,11 @@ Vue.component('statistics-summary-table', {
 
 	template: `
 	<div class="container">
-
 		<div class="row" v-for="s_pk in rules.statistics_order">
 			<hr>
 			<div class="col-md-1 h1">
+				<span class="h4">{{rules.statistics[s_pk].name}}</span>
+	
 				{{sum_for_stat(s_pk)}}
 			</div>
 			<div class="col-md-1 h1">
@@ -140,6 +150,8 @@ Vue.component('statistics-summary-table', {
 				{{mod.value}} from
 				<em>{{rules.classes[mod.c_pk].name}}
 				{{rules.class_collections[mod.cc_pk].name}}</em>	
+				
+				
 			</span>
 		</div>
 	</div>`,
@@ -162,7 +174,6 @@ Vue.component('statistics-summary-table', {
 	methods: {
 		sum_for_stat: function(s_pk){
 			var sum = 0;
-			console.log(s_pk, this.stat_to_modifier_dict);
 			if(this.stat_to_modifier_dict[s_pk]){
 				for(var i = 0; i < this.stat_to_modifier_dict[s_pk].length; i++){
 					sum += this.stat_to_modifier_dict[s_pk][i].value;
@@ -253,7 +264,9 @@ Vue.component('class-selector', {
 			<select size="5"
 				class="form-control"
 				v-model="selected_class_pk"
-				v-on:change="change_selection">
+				v-on:change="change_selection"
+				:name="'class_collection_'+cc_pk"
+				:id="'class_collection_'+cc_pk">
 				<option
 					v-for="c in this.rules.class_collections[cc_pk].classes" 
 					:value="c">

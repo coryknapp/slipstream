@@ -56,3 +56,8 @@ img.effect-icon{
 	text-align: center;
     vertical-align: middle;
 }
+
+img.effects-icon{
+	width: 48pt;
+	height: 48pt;
+}
