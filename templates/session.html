@@ -38,12 +38,12 @@ rules.classes = {
 	{% for c in character.classes.all %}
 		{{c.pk}}: {
 			name: "{{c.name}}",
-			statistic_modifiers: {
+			modifiers: {
 				{% for s_mod in c.statistic_modifiers.get_all_modifiers %}
 					{{s_mod.statistic_pk}} : {{s_mod.value}},
 				{% endfor %}
 				},
-			class_collections_name: "{{c.collection.name}}",
+			class_collection_pk: {{c.collection.pk}},
 		},
 	{% endfor %}
 };
@@ -54,7 +54,7 @@ rules.effects = {
 			name: "{{e.name}}",
 			description: "{{e.description}}",
 			icon_url: "{{e.icon_url}}",
-			statistic_modifiers: {
+			modifiers: {
 				{% for s_mod in e.statistic_modifiers.get_all_modifiers %}
 					s_mod.statistic.pk : s_mod.value,
 				{% endfor %}
@@ -63,7 +63,10 @@ rules.effects = {
 	{% endfor %}
 };
 
-character = {};
+character = {
+	name: "{{character.name}}",
+	generated_description: "{{character.generated_description}}",
+};
 
 character.base_statistics = {
 	{% for bs in base_statistics %}
@@ -83,7 +86,20 @@ character.classes = [
 	{% endfor %}
 ];
 
+onload = function(){
+	app = new Vue({
+		el: '#app',
+
+		data: {
+			rules : rules,
+			character: character,
+			
+		},
+	});
+}
+
 </script>
+<script src="/static/js/character_view.js" charset="utf-8"></script>
 <script src="/static/js/session.js" charset="utf-8"></script>
 
 {% endblock %}
@@ -93,7 +109,7 @@ character.classes = [
 	<div id="app">
 		<character-view
 			:rules="rules"
-			:character="character">
+			:character="character"></character-view>
 	</div> {#end app#}
 </div>
 {% endblock %}

@@ -14,6 +14,23 @@
 window.Tether = function () {
 	throw new Error('Your Bootstrap may actually need Tether.');
 };
+
+function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie != '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = jQuery.trim(cookies[i]);
+                // Does this cookie string begin with the name we want?
+                if (cookie.substring(0, name.length + 1) == (name + '=')) {
+					cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+}
+
 </script>
 
 <script src="/static/js/jquery.js" charset="utf-8"></script>
@@ -45,10 +62,10 @@ window.Tether = function () {
 				{% else %}			
 				<li class="nav-item active">
 					<a class="nav-link" href="{% url 'auth_login' %}">
-						Sign In<
+						Sign In
 					</a>
 				</li>
-				{% endif %}			
+				{% endif %}
 			</ul>
 		</div>
 	</nav>

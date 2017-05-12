@@ -1,10 +1,62 @@
 {% extends 'base.html' %}
 {% load static %}
 
+
+{% block script %}
+
+{% include "rules.html" %}
+<script src="/static/js/vue.js" charset="utf-8"></script>
+<script type="text/javascript">
+
+
+characters = {
+	{% for c in characters %}
+		{{c.pk}}: {
+			name: "{{c.name}}",
+			generated_description: "{{c.generated_description}}",
+			base_statistics : {
+				{% for bs in c.base_statistics.get_all_modifiers %}
+					{{bs.statistic_pk}} : {{bs.value}},
+				{% endfor %}
+				},
+			classes: [
+				{% for c in c.classes.all %}
+					{{c.pk}},
+				{% endfor %}
+				],
+		},
+	{% endfor %}
+};
+
+onload = function(){
+	app = new Vue({
+		el: '#app',
+
+		data: {
+			rules : rules,
+			characters: characters,
+			
+		},
+	});
+}
+
+</script>
+<script src="/static/js/character_view.js" charset="utf-8"></script>
+<script src="/static/js/gm_session.js" charset="utf-8"></script>
+
+{% endblock %}
+
+
 {% block content %}
+
 <div class="container">
-	<div class="row">
-		
+	<div id="app">
+		<div v-for="c in characters">
+			<character-view
+				:rules="rules"
+				:character="c"></character-view>
+		</div>
 	</div>
 </div>
 {% endblock %}
+

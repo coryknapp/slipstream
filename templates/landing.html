@@ -19,7 +19,7 @@
 	</div>
 </div>
 {% else %}
-<div class="row">
+<div class="container"> <div class="row">
 	<div class="col-md-4">
 		<h2>Join a Campaign</h2>
 		<div id='access_code_help'>
@@ -63,12 +63,14 @@
 		<h2>Your Characters</h2>
 		<div class="card-columns">
 		{% for char in character_list%}
-		<div class="card"><div class="card-block">
-			<h4>
+		<div class="card mb-4"><div class="card-block">
+			<h4 class="card-title">
 				{{ char.name }}
 				<small>{{char.campaign.name}}</small>
 			</h4>
-			<p>{{char.generated_description}}</p>
+			<p class="card-text">
+				{{char.generated_description}}
+			</p>
 			<a href="{% url 'session' character_pk=char.pk %}"
 				class="btn btn-primary"
 				role="button">
@@ -103,8 +105,7 @@
 
 	</div>
 
-
+</div> </div>
 	{% endif %}
-</div>
 
 {% endblock %}

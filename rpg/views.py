@@ -1,10 +1,11 @@
 import string
 import random
+import json
 
 from django.shortcuts import render
 
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.core.urlresolvers import reverse
 
 from models import RuleSet
@@ -83,9 +84,18 @@ def create_campaign_and_redirect(request):
 @login_required
 def gm_session_view(request, campaign_pk):
     campaign = Campaign.objects.get(pk=campaign_pk)
+    rule_set = campaign.rule_set
+
+    characters = Character.objects.filter(campaign=campaign)
+
     context = {
         'campaign': campaign,
-        #'class_list': class_list,
+        'characters': characters,
+        'statistics': Statistic.objects.filter(
+            rule_set=rule_set
+            ).order_by('selection_order'),
+        'classes': Class.objects.filter(rule_set=rule_set),
+        'effects': Effect.objects.filter(rule_set=rule_set)
     }
 
     return render(request, 'gm_session.html', context)
@@ -97,8 +107,9 @@ def session_view(request, character_pk):
 
     #character stats come from base stats, and any modifiers from
     #class or items
-    base_statistics = character.base_statistics.get_all_modifiers()
+    base_statistics = character.base_statistics.get_all_modifiers
     
+    print(character)
     #gather character effects from classes, and any loose effects the character
     #might have
     #TODO there must be a better way to do this using the built in models.
@@ -119,6 +130,31 @@ def session_view(request, character_pk):
     }
 
     return render(request, 'session.html', context)
+
+def get_rules(request):
+    class_requests = request.GET.get('class_pks', [])
+    class_list = Class.objects.filter(pk__in = class_requests)
+    class_json_list = []
+    for c in class_list:
+        class_json_list.append({
+            'name': c.name,
+            'description': c.description,
+            'modifiers': c.get_all_modifiers,
+            'class_effects': c.values_list('related__pk')
+        });
+    return JsonResponse({
+        'classes': class_json_list});
+            
+
+
+@login_required
+def character_json(request):
+    """TODO: Docstring for character_json.
+
+    :arg1: TODO
+    :returns: TODO
+
+    """
 
 @login_required
 def new_character_view(request):
@@ -183,7 +219,7 @@ def new_character_view(request):
     return render(request, 'new_character.html', context)
 
 @login_required
-def create_character_and_redirect(request):
+def create_character(request):
     """
     
     Directed from:
@@ -203,11 +239,14 @@ def create_character_and_redirect(request):
     If everything is valid, create a new character object
     """
 
+    character_submission = json.loads(request.POST.get('character'))
+    
+    #character_json_
 
     #get the campaign TODO validate that this user should be able to
     #join this campaign
-    campaign_pk = int(request.GET.get('campaign_pk', None))
-    campaign_access_code = request.GET.get('campaign_access_code')
+    campaign_pk = int(request.POST.get('campaign_pk', None))
+    campaign_access_code = request.POST.get('campaign_access_code')
 
     #get the campaign with this pk and access code.  We don't have to worry about
     #not finding it, because if that's the case, the user is doing something 
@@ -218,46 +257,37 @@ def create_character_and_redirect(request):
     #don't bother validating because, again, the if the name is missing then the
     #user is mucking around where they don't belong.  This should have been validated
     #on the front end.
-    character_name = request.GET.get('character_name', 'The Nameless')
+    character_name = character_submission['name']
 
-    #for each class collection, look for a field that matches it's pk 
-    #make a dictionary of class_collection pks to class pks
-    class_map = {}
-    for cc in ClassCollection.objects.filter(rule_set=rule_set):
-        class_map[cc.pk] = int(request.GET.get('class_collection_'+str(cc.pk), None))
-    
-    #for each stat, look for a field that matches it's pk 
-    #make a dictionary of stat pks to allocations
-    allocations = {}
-    for s in Statistic.objects.filter(rule_set=rule_set):
-        allocations[s.pk] = int(request.GET.get('stat_bed_'+str(s.pk), None))
-    
     #create the character 
     new_character = Character(
             owning_user=request.user,
             name=character_name,
             campaign=campaign)
     new_character.save()
-    
+
     #set up a new StatisticInstanceSet for this chars base stats
     new_stat_set = StatisticInstanceSet()
     new_stat_set.save()
-    for s_pk, value in allocations.items():
+    for s_pk, value in character_submission['base_statistics'].items():
         print(s_pk, value)
-        new_stat_set.set_modifier(Statistic.objects.get(pk=s_pk), allocations[s_pk]);
+        new_stat_set.set_modifier(Statistic.objects.get(pk=s_pk), value);
     new_character.base_statistics = new_stat_set
 
     #add the classes to the character, and build the generated description
     generated_description = ""
-    for k, c_pk in class_map.items():
+    for c_pk in character_submission['classes']:
         class_object = Class.objects.get(pk=c_pk)
         generated_description += class_object.name + " "
         new_character.classes.add(class_object)
     new_character.generated_description = generated_description;
     new_character.save()
 
-    print(request.GET)
-    return HttpResponseRedirect(reverse('session', args=[new_character.pk]))
+    #success condition!!!
+    return JsonResponse({
+        'c_pk': new_character.pk
+        })
+
 
 
 def populate(request):

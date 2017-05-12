@@ -25,8 +25,11 @@ class Statistic(models.Model):
     rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
 
     name = models.CharField(max_length=MAX_NAME_LENGTH)       
-    description = models.CharField( max_length=MAX_DESCRIPTION_LENGTH)    
+    description = models.CharField( max_length=MAX_DESCRIPTION_LENGTH)
     selection_order = models.IntegerField()
+
+    contributes_to_max_hp = models.BooleanField(default=False)
+
     def __str__(self):    
         return 'Statistic: {}'.format(self.name)
 
@@ -61,6 +64,7 @@ class StatisticInstanceSet(models.Model):
         except StatisticInstance.DoesNotExist:
             return 0
 
+    @property 
     def get_all_modifiers(self):
         """
         get a json representation off all stat instances associated with this
@@ -96,6 +100,13 @@ class Character(models.Model):
     def __str__(self):    
         return '%s the %s ' % (self.name, self.generated_description)
 
+    def json_representation(self):
+        return {
+                'name': self.name,
+                'generated_description': self.generated_description,
+                'base_statistics' : self.base_statistics.get_all_modifiers(),
+                }
+
 class Campaign(models.Model):
 
     rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
@@ -125,6 +136,7 @@ class Class(models.Model):
     short_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
 
     statistic_modifiers = models.ForeignKey('StatisticInstanceSet', null=True)    
+    hp_bonus = models.IntegerField(default=0)
 
     class_effects = models.ManyToManyField('Effect')
     def __str__(self):    
