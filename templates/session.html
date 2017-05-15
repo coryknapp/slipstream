@@ -5,63 +5,10 @@
 {% block script %}
 
 <script src="/static/js/vue.js" charset="utf-8"></script>
+
+{% include "rules.html" %}
+
 <script type="text/javascript">
-
-rules = {};
-
-rules.modifier_map = [
-	03 , -3, //3 and under, map to -3
-	05 , -2, // under 5, map to -2
-	08 , -1,
-	12 , 0,
-	15 , 1,
-	17 , 2,
-	18 , 3,
-]
-
-rules.statistics = {
-	{% for s in statistics %}
-		{{s.pk}}: {
-			name: "{{s.name}}",
-			description: "{{s.description}}",
-		},
-	{% endfor %}
-}; //end statistic dict
-
-rules.statistics_order = [
-	{% for s in statistics %}
-		{{s.pk}},
-	{% endfor %}
-];
-
-rules.classes = {
-	{% for c in character.classes.all %}
-		{{c.pk}}: {
-			name: "{{c.name}}",
-			modifiers: {
-				{% for s_mod in c.statistic_modifiers.get_all_modifiers %}
-					{{s_mod.statistic_pk}} : {{s_mod.value}},
-				{% endfor %}
-				},
-			class_collection_pk: {{c.collection.pk}},
-		},
-	{% endfor %}
-};
-
-rules.effects = {
-	{% for e in effects%}
-		{{e.pk}}: {
-			name: "{{e.name}}",
-			description: "{{e.description}}",
-			icon_url: "{{e.icon_url}}",
-			modifiers: {
-				{% for s_mod in e.statistic_modifiers.get_all_modifiers %}
-					s_mod.statistic.pk : s_mod.value,
-				{% endfor %}
-				},
-			},
-	{% endfor %}
-};
 
 character = {
 	name: "{{character.name}}",
@@ -69,13 +16,13 @@ character = {
 };
 
 character.base_statistics = {
-	{% for bs in base_statistics %}
-		{{bs.statistic_pk}} : {{bs.value}},
+	{% for bs in character.base_statistics.statistic_modifiers.all %}
+		{{bs.statistic.pk}} : {{bs.value}},
 	{% endfor %}
 };
 
 character.effects = [
-	{% for e in effects %}
+	{% for e in character.effects.all %}
 		{{e.pk}},
 	{% endfor %}
 ];
@@ -85,6 +32,12 @@ character.classes = [
 		{{c.pk}},
 	{% endfor %}
 ];
+
+character.currency_quantity = {
+	{% for cq in character.inventory_set.currency_quantities.all %}
+		{{cq.currency.pk}} : {{cq.count}},
+	{% endfor %}
+};
 
 onload = function(){
 	app = new Vue({

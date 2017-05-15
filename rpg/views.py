@@ -2,6 +2,8 @@ import string
 import random
 import json
 
+from copy import deepcopy
+
 from django.shortcuts import render
 
 from django.contrib.auth.decorators import login_required
@@ -17,6 +19,10 @@ from models import Class
 from models import ClassCollection
 from models import StatisticInstanceSet
 from models import Effect
+from models import Action
+from models import Currency
+from models import CurrencyQuantity
+from models import InventorySet
 
 def landing_page_view(request, access_code_error = False):
     context = {
@@ -107,54 +113,22 @@ def session_view(request, character_pk):
 
     #character stats come from base stats, and any modifiers from
     #class or items
-    base_statistics = character.base_statistics.get_all_modifiers
     
-    print(character)
-    #gather character effects from classes, and any loose effects the character
-    #might have
-    #TODO there must be a better way to do this using the built in models.
-    effects = [];
-    for c in character.classes.all():
-        print(c)
-        for e in c.class_effects.all():
-            print(e)
-            effects.append(e)
     context = {
+        'rule_set': rule_set,
         'character': character,
         'statistics': Statistic.objects.filter(
             rule_set=rule_set
             ).order_by('selection_order'),
-        'rule_set': rule_set,
-        'base_statistics': base_statistics,
-        'effects': effects,
+        'classes': Class.objects.filter(rule_set=rule_set),
+        'effects': Effect.objects.filter(rule_set=rule_set),
+        'actions': Action.objects.filter(rule_set=rule_set),
+        'currencies': Currency.objects.filter(
+            rule_set=rule_set
+            ).order_by('selection_order'),
     }
 
     return render(request, 'session.html', context)
-
-def get_rules(request):
-    class_requests = request.GET.get('class_pks', [])
-    class_list = Class.objects.filter(pk__in = class_requests)
-    class_json_list = []
-    for c in class_list:
-        class_json_list.append({
-            'name': c.name,
-            'description': c.description,
-            'modifiers': c.get_all_modifiers,
-            'class_effects': c.values_list('related__pk')
-        });
-    return JsonResponse({
-        'classes': class_json_list});
-            
-
-
-@login_required
-def character_json(request):
-    """TODO: Docstring for character_json.
-
-    :arg1: TODO
-    :returns: TODO
-
-    """
 
 @login_required
 def new_character_view(request):
@@ -281,6 +255,14 @@ def create_character(request):
         generated_description += class_object.name + " "
         new_character.classes.add(class_object)
     new_character.generated_description = generated_description;
+    #new_character.save()
+
+    #put everything in the rules' defult inventory set into the characters
+    #inventory
+    #TODO we actually need to make a deeper copy XXX BUG
+    if rule_set.default_inventory_set:
+        new_character.inventory_set = rule_set.default_inventory_set.deep_copy()
+            
     new_character.save()
 
     #success condition!!!
@@ -297,8 +279,12 @@ def populate(request):
     StatisticInstance.objects.all().delete()
     Character.objects.all().delete()
     Campaign.objects.all().delete()
+    Effect.objects.all().delete()
+    Action.objects.all().delete()
     Class.objects.all().delete()
     ClassCollection.objects.all().delete()
+    Currency.objects.all().delete()
+    InventorySet.objects.all().delete()
 
     beta_rule_set = RuleSet(name = 'Slipstream BETA')
     beta_rule_set.save()
@@ -409,7 +395,7 @@ def populate(request):
         collection = class_cc,
         name = 'Con artist',
         short_description = 'The master of the grift.',)
-    conartist_class.statistic_modifiers = StatisticInstanceSet()
+    conartist_class.save()
 
     magistrate_class = Class(
         rule_set = beta_rule_set,
@@ -424,4 +410,43 @@ def populate(request):
         name = 'Bounty Hunter',
         short_description = "You scour space looking for your big payday.",)
     bountyhunter_class.save();
+
+    galactic_credits_currency = Currency(
+        rule_set = beta_rule_set,
+        name = 'Galactic Credits',
+        icon_url = 'galactic_credits.png',
+        selection_order = 1)
+    galactic_credits_currency.save()
+
+    federation_script_currency = Currency(
+        rule_set = beta_rule_set,
+        name = 'Federation Script',
+        icon_url = 'galactic_credits.png',
+        selection_order = 1)
+    federation_script_currency.save()
+    
+    default_inventory_set = InventorySet()
+    default_inventory_set.save()
+
+    two_hundred_galactic_credits = CurrencyQuantity(
+        currency = galactic_credits_currency,
+        count = 200)
+    two_hundred_galactic_credits.save()
+    default_inventory_set.currency_quantities.add(two_hundred_galactic_credits)
+    default_inventory_set.save()
+    
+    beta_rule_set.default_inventory_set = default_inventory_set
+    beta_rule_set.save()
+
+    #actions
+    punch_action = Action(
+        rule_set = beta_rule_set,
+        name = 'Punch',
+        icon_url = 'galactic_credits.png',
+        description = "Punch a guy in the face",       
+        associated_statistic = guts_stat)
+    punch_action.save()
+    beta_rule_set.basic_actions.add(punch_action)
+    beta_rule_set.save()
+    
     return HttpResponse("success, I guess.")

@@ -6,6 +6,9 @@ from models import Character
 from models import Campaign
 from models import Effect
 from models import Class
+from models import Currency
+from models import CurrencyQuantity
+from models import InventorySet
 from models import ClassCollection
 
 
@@ -17,3 +20,6 @@ admin.site.register(Campaign)
 admin.site.register(Class)
 admin.site.register(ClassCollection)
 admin.site.register(Effect)
+admin.site.register(InventorySet)
+admin.site.register(Currency)
+admin.site.register(CurrencyQuantity)

@@ -32,10 +32,6 @@ urlpatterns = [
         views.session_view,
         name='session'),
 
-    url(r'^get_rules/$',
-        views.get_rules,
-        name='get_rules'),
-
     #???
     url(r'^create_campaign_and_redirect/$',
         views.create_campaign_and_redirect,

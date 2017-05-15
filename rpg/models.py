@@ -14,6 +14,12 @@ class RuleSet(models.Model):
     name = models.CharField(
             max_length=MAX_NAME_LENGTH
             )
+
+    """These are actions that every character starts with"""
+    basic_actions = models.ManyToManyField('Action');
+
+    default_inventory_set = models.ForeignKey('InventorySet', null=True)
+
     def __str__(self):
         return 'RuleSet: {}'.format(self.name)
 
@@ -97,6 +103,9 @@ class Character(models.Model):
     #a short phrase based on the it's classes.  Simpler and cheaper to
     #generate it once instead of every time. 
     generated_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
+
+    inventory_set = models.ForeignKey('InventorySet', null=True)
+
     def __str__(self):    
         return '%s the %s ' % (self.name, self.generated_description)
 
@@ -172,3 +181,53 @@ class Effect(models.Model):
     def __str__(self):    
         return '%s' % (self.name)
 
+class Action(models.Model):
+    """
+    Something a character can do, like lockpick, stab, or cast magic missile.
+    """
+    rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=MAX_NAME_LENGTH)
+    description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
+
+    #TODO store icon data in a database blob, rather then a url
+    icon_url = models.CharField(max_length=MAX_NAME_LENGTH)
+
+    associated_statistic = models.ForeignKey('Statistic', null=True)    
+    def __str__(self):    
+        return '%s' % (self.name)
+
+class Currency(models.Model):
+    rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
+    name = models.CharField(max_length=200)
+    icon_url = models.URLField()
+    selection_order = models.IntegerField(default=True)
+    def __str__(self):    
+        return '%s' % (self.name)
+
+class CurrencyQuantity(models.Model):
+    currency = models.ForeignKey('Currency')
+    count = models.IntegerField(default=0)
+    def __str__(self):    
+        return '%s %s' % (self.count, self.currency)
+
+class InventorySet(models.Model):
+    currency_quantities = models.ManyToManyField('CurrencyQuantity')
+
+    def deep_copy(self):
+        print('deep copy InventorySet')
+        """return a deep copy of this inventory set.  The copy is already saved
+        at return time.
+        """
+        copy = InventorySet.objects.get(pk=self.pk)
+        copy.pk = None
+        copy.save()
+        #copy the currency quantities
+        for cq in self.currency_quantities.all():
+            print('sq copy')
+            cq_copy = cq
+            cq_copy.pk = None
+            cq_copy.save()
+            copy.currency_quantities.add(cq_copy)
+        copy.save()
+        return copy
