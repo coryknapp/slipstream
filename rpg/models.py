@@ -20,7 +20,13 @@ class RuleSet(models.Model):
 
     default_inventory_set = models.ForeignKey('InventorySet', null=True)
 
-    def __str__(self):
+    def equipableitem_set(self):
+        """
+        work around for getting the _set of a subclass.  Perhaps there is a better way
+        """
+        return EquipableItem.objects.filter(rule_set = self)
+
+    def __unicode__(self):
         return 'RuleSet: {}'.format(self.name)
 
 class Statistic(models.Model):
@@ -34,15 +40,16 @@ class Statistic(models.Model):
     description = models.CharField( max_length=MAX_DESCRIPTION_LENGTH)
     selection_order = models.IntegerField()
 
-    contributes_to_max_hp = models.BooleanField(default=False)
-
-    def __str__(self):    
+    def __unicode__(self):    
         return 'Statistic: {}'.format(self.name)
+
+    class Meta:
+        ordering = ['selection_order']
 
 class StatisticInstance(models.Model):
     statistic = models.ForeignKey('Statistic', on_delete=models.CASCADE)
     value = models.IntegerField(default=0)
-    def __str__(self):    
+    def __unicode__(self):    
         return '%+d %s ' % (self.value, self.statistic.name)
 
 
@@ -83,20 +90,61 @@ class StatisticInstanceSet(models.Model):
                 'value' : sm.value
                 })
         return sm_list
-    def __str__(self):    
+    def __unicode__(self):    
         sm_text = ""
         for sm in self.statistic_modifiers.all():
             sm_text += str(sm)
         return sm_text
 
+class DerivedStatistic(models.Model):
+    """
+    A statistic that depends on another (think hit points, armour)
+    """
+    rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
+    name = models.CharField(max_length=MAX_NAME_LENGTH)       
+    description = models.CharField( max_length=MAX_DESCRIPTION_LENGTH)
+    selection_order = models.IntegerField()
 
+    base_statistic = models.ForeignKey(
+            'Statistic',
+            on_delete=models.CASCADE,
+            null=True)
+    multiplier = models.DecimalField(max_digits=5, decimal_places=2, default=1)
+
+    #unfortunately a lot of the logic here is implemented by a bunch of
+    #flags that control how the front end handles display
+    
+    depleatable = models.BooleanField(default=False)
+    always_instantiated = models.BooleanField(default=False)
+
+    # secondary stats are displayed differently.  They are grouped onto
+    # another page, and only show the modifiers, not the stat itself
+    secondary = models.BooleanField(default=False)
+    
+
+    class Meta:
+        ordering = ['selection_order']
+
+class DerivedStatisticInstance(models.Model):
+    character = models.ForeignKey('Character', on_delete=models.CASCADE)
+    statistic = models.ForeignKey('DerivedStatistic', on_delete=models.CASCADE)
+    depleted_value = models.IntegerField(default=0)
+
+    def value(self):
+        if self.statistic.base_statistic:
+            return 0
+        max_value = self.character.statistics.get_modifier(statistic.base_statistic).value
+            #statistic.multiplier;
 
 class Character(models.Model):
     owning_user = models.ForeignKey(User, on_delete=models.CASCADE)
     name = models.CharField(max_length=MAX_NAME_LENGTH)
     campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE)
 
-    base_statistics = models.ForeignKey('StatisticInstanceSet', null=True)    
+    base_statistics = models.ForeignKey(
+            'StatisticInstanceSet',
+            null=True,
+            on_delete=models.CASCADE)    
     classes = models.ManyToManyField('Class')
 
     #this field should be generated on character creation.  It should be
@@ -104,9 +152,12 @@ class Character(models.Model):
     #generate it once instead of every time. 
     generated_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
 
-    inventory_set = models.ForeignKey('InventorySet', null=True)
+    inventory_set = models.ForeignKey(
+            'InventorySet',
+            null=True,
+            on_delete=models.CASCADE)
 
-    def __str__(self):    
+    def __unicode__(self):    
         return '%s the %s ' % (self.name, self.generated_description)
 
     def json_representation(self):
@@ -129,7 +180,7 @@ class Campaign(models.Model):
     active_session = models.BooleanField(default=False)
 
     world_time = models.IntegerField(default=0)
-    def __str__(self):    
+    def __unicode__(self):    
         return '%s' % (self.name)
 
 class Class(models.Model):
@@ -144,11 +195,12 @@ class Class(models.Model):
     name = models.CharField(max_length=MAX_NAME_LENGTH)
     short_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
 
-    statistic_modifiers = models.ForeignKey('StatisticInstanceSet', null=True)    
-    hp_bonus = models.IntegerField(default=0)
+    statistic_modifiers = models.ForeignKey('StatisticInstanceSet', null=True, on_delete=models.CASCADE)    
 
+    slots = models.ManyToManyField('ItemSlot')
+    
     class_effects = models.ManyToManyField('Effect')
-    def __str__(self):    
+    def __unicode__(self):    
         return '%s' % (self.name)
 
 class ClassCollection(models.Model):
@@ -161,7 +213,7 @@ class ClassCollection(models.Model):
     name = models.CharField(max_length=MAX_NAME_LENGTH)
     short_description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
     selection_order = models.IntegerField(default=0)
-    def __str__(self):    
+    def __unicode__(self):    
         return '%s' % (self.name)
 
 class Effect(models.Model):
@@ -178,7 +230,7 @@ class Effect(models.Model):
     icon_url = models.CharField(max_length=MAX_NAME_LENGTH)
 
     statistic_modifiers = models.ForeignKey('StatisticInstanceSet', null=True)    
-    def __str__(self):    
+    def __unicode__(self):    
         return '%s' % (self.name)
 
 class Action(models.Model):
@@ -194,25 +246,12 @@ class Action(models.Model):
     icon_url = models.CharField(max_length=MAX_NAME_LENGTH)
 
     associated_statistic = models.ForeignKey('Statistic', null=True)    
-    def __str__(self):    
+    def __unicode__(self):    
         return '%s' % (self.name)
-
-class Currency(models.Model):
-    rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
-    name = models.CharField(max_length=200)
-    icon_url = models.URLField()
-    selection_order = models.IntegerField(default=True)
-    def __str__(self):    
-        return '%s' % (self.name)
-
-class CurrencyQuantity(models.Model):
-    currency = models.ForeignKey('Currency')
-    count = models.IntegerField(default=0)
-    def __str__(self):    
-        return '%s %s' % (self.count, self.currency)
 
 class InventorySet(models.Model):
     currency_quantities = models.ManyToManyField('CurrencyQuantity')
+    items = models.ManyToManyField('Item')
 
     def deep_copy(self):
         print('deep copy InventorySet')
@@ -224,10 +263,65 @@ class InventorySet(models.Model):
         copy.save()
         #copy the currency quantities
         for cq in self.currency_quantities.all():
-            print('sq copy')
             cq_copy = cq
             cq_copy.pk = None
             cq_copy.save()
             copy.currency_quantities.add(cq_copy)
         copy.save()
+
+        #copy the items
+        for i in self.items.all():
+            copy.items.add(i)
+        copy.save()
+
+
         return copy
+
+class Currency(models.Model):
+    rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
+    name = models.CharField(max_length=MAX_NAME_LENGTH)
+    icon_url = models.URLField()
+    selection_order = models.IntegerField(default=True)
+    def __unicode__(self):    
+        return '%s' % (self.name)
+
+class CurrencyQuantity(models.Model):
+    currency = models.ForeignKey('Currency')
+    count = models.IntegerField(default=0)
+    def __unicode__(self):    
+        return '%s %s' % (self.count, self.currency)
+
+
+class Item(models.Model):
+    rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
+
+    name = models.CharField(max_length=MAX_NAME_LENGTH)
+    description = models.CharField(max_length=MAX_DESCRIPTION_LENGTH)
+    icon_url = models.URLField()
+
+class EquipableItem(Item):
+
+    slots = models.ManyToManyField('ItemSlot')
+    
+    actions = models.ManyToManyField('Action');
+
+class ItemSlot(models.Model):
+    """
+    item slots describe 
+    """
+    rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
+    name = models.CharField(max_length=MAX_NAME_LENGTH)
+    def __unicode__(self):
+        return '%s (pk=%s)' % (self.name, self.pk)
+
+class CharacterItemSlot(models.Model):
+    """
+    links an item slot to a class.
+    contains information about where to draw the slot on a picture
+    of the character.
+    It was extremely difficult to come up with a name for this class.
+    """
+    character = models.ForeignKey('Character', on_delete=models.CASCADE)
+    item_slot = models.ForeignKey('ItemSlot', on_delete=models.CASCADE)
+    item = models.ForeignKey('Item', null=True, on_delete=models.CASCADE)
+

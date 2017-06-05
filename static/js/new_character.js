@@ -134,7 +134,7 @@ Vue.component('StatisticAllocationBox', {
 
 });
 
-Vue.component('class-selector', {
+Vue.component('ClassSelector', {
 	props: {
 		cc_pk : Number,
 		rules : Object,
@@ -164,10 +164,6 @@ Vue.component('class-selector', {
 					{{description_text}}
 				</p>
 				<div v-if="selected_class_pk != -1 && Object.keys(modifiers).length > 0">
-					<div v-if="rules.classes[selected_class_pk].hp_bonus > 0">
-						<h5>HP Bonus</h5>
-						{{rules.classes[selected_class_pk].hp_bonus}}
-					</div>
 					<h5>Statistic Modifiers</h5>
 					<div class="row justify-content-around">
 						<span
@@ -195,12 +191,29 @@ Vue.component('class-selector', {
 	data: function () {
 		return {
 			selected_class_pk: -1,
-			description_text: "",
-			modifiers: [],
-			effects: [],
 		};
 	},
 
+	computed:{
+		description_text: function(){
+			if(this.selected_class_pk == -1)
+				return "";
+			else
+				return rules.classes[this.selected_class_pk].description;
+		},
+		effects: function(){
+			if(this.selected_class_pk == -1)
+				return [];
+			else
+				return rules.classes[this.selected_class_pk].effects;
+		},
+		modifiers: function(){
+			if(this.selected_class_pk == -1)
+				return {};
+			else
+				return rules.classes[this.selected_class_pk].modifiers;
+		},
+	},
 	methods: {
 		change_selection: function() {
 			//if there was a class amongst the character's classes that has the
@@ -215,12 +228,6 @@ Vue.component('class-selector', {
 				}
 			}
 
-			//update interface items
-			this.description_text =
-				this.rules.classes[this.selected_class_pk].description;
-			this.modifiers = this.rules.classes[this.selected_class_pk].modifiers;
-			this.effects = this.rules.classes[this.selected_class_pk].class_effects;
-			
 			this.character.classes.push(this.selected_class_pk);
 		},
 	}
