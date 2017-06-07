@@ -20,9 +20,15 @@ from models import ClassCollection
 from models import StatisticInstanceSet
 from models import Effect
 from models import Action
+from models import InventorySet
 from models import Currency
 from models import CurrencyQuantity
-from models import InventorySet
+from models import Item
+from models import EquipableItem
+from models import ItemSlot
+from models import CharacterItemSlot
+from models import DerivedStatistic
+from models import DerivedStatisticInstance
 
 def landing_page_view(request, access_code_error = False):
     context = {
@@ -97,11 +103,7 @@ def gm_session_view(request, campaign_pk):
     context = {
         'campaign': campaign,
         'characters': characters,
-        'statistics': Statistic.objects.filter(
-            rule_set=rule_set
-            ).order_by('selection_order'),
-        'classes': Class.objects.filter(rule_set=rule_set),
-        'effects': Effect.objects.filter(rule_set=rule_set)
+        'rule_set': rule_set,
     }
 
     return render(request, 'gm_session.html', context)
@@ -111,24 +113,42 @@ def session_view(request, character_pk):
     character = Character.objects.get(pk=character_pk)
     rule_set = character.campaign.rule_set
 
-    #character stats come from base stats, and any modifiers from
-    #class or items
-    
     context = {
         'rule_set': rule_set,
         'character': character,
-        'statistics': Statistic.objects.filter(
-            rule_set=rule_set
-            ).order_by('selection_order'),
-        'classes': Class.objects.filter(rule_set=rule_set),
-        'effects': Effect.objects.filter(rule_set=rule_set),
-        'actions': Action.objects.filter(rule_set=rule_set),
-        'currencies': Currency.objects.filter(
-            rule_set=rule_set
-            ).order_by('selection_order'),
     }
 
     return render(request, 'session.html', context)
+
+@login_required
+def modify_character(request):
+    character_pk = int(request.POST.get('character_pk'))
+    mods = json.loads(request.POST.get('mods'))
+
+    items_equipped = mods['items_equipped']
+    items_unequipped = mods['items_unequipped']
+
+    for item_pk in items_unequipped:
+        item = EquipableItem.objects.get(pk = item_pk)
+        for slot in item.slots.all():
+            cis = CharacterItemSlot.objects.get(
+                    character_id = character_pk,
+                    item_slot = slot)
+            cis.item = None
+            cis.save()
+
+
+    for item_pk in items_equipped:
+        #TODO respond with an error if we can equip this thing.
+        item = EquipableItem.objects.get(pk = item_pk)
+        for slot in item.slots.all():
+            cis = CharacterItemSlot.objects.get(
+                    character_id = character_pk,
+                    item_slot = slot)
+            cis.item = item
+            cis.save()
+
+    return JsonResponse({})
 
 @login_required
 def new_character_view(request):
@@ -136,11 +156,11 @@ def new_character_view(request):
     Display the form for character creation.
 
     Directed from:
-    home, user_profile_view, create_character_and_redirect (with message about
+    home, user_profile_view, create_character (with message about
     why the create failed)
 
     Directs to:
-    create_character_and_redirect,
+    create_character,
 
     Request object:
     * requires a authenticated user
@@ -244,9 +264,18 @@ def create_character(request):
     new_stat_set = StatisticInstanceSet()
     new_stat_set.save()
     for s_pk, value in character_submission['base_statistics'].items():
-        print(s_pk, value)
         new_stat_set.set_modifier(Statistic.objects.get(pk=s_pk), value);
     new_character.base_statistics = new_stat_set
+
+    #set up a new DerivedStatisticInstance for every always_instantiated
+    #DerivedStatistic
+    for ds in DerivedStatistic.objects.filter(rule_set=rule_set, always_instantiated=True):
+        dsi = DerivedStatisticInstance(
+                character=new_character,
+                statistic=ds)
+        if dsi.statistic.depleatable:
+            dsi.depleted_value = dsi.value()
+        dsi.save()
 
     #add the classes to the character, and build the generated description
     generated_description = ""
@@ -262,8 +291,18 @@ def create_character(request):
     #TODO we actually need to make a deeper copy XXX BUG
     if rule_set.default_inventory_set:
         new_character.inventory_set = rule_set.default_inventory_set.deep_copy()
-            
     new_character.save()
+
+    #add the slots
+    for c in new_character.classes.all():
+        print('char ', c)
+        print('slots ', c.slots.all())
+        for s in c.slots.all():
+            new_character_item_slot = CharacterItemSlot(
+                character = new_character,
+                item_slot = s)
+            new_character_item_slot.save()
+            print('making them new slots!!!!')
 
     #success condition!!!
     return JsonResponse({
@@ -275,16 +314,20 @@ def create_character(request):
 def populate(request):
 
     RuleSet.objects.all().delete()
-    Statistic.objects.all().delete()
-    StatisticInstance.objects.all().delete()
-    Character.objects.all().delete()
-    Campaign.objects.all().delete()
-    Effect.objects.all().delete()
-    Action.objects.all().delete()
-    Class.objects.all().delete()
-    ClassCollection.objects.all().delete()
-    Currency.objects.all().delete()
-    InventorySet.objects.all().delete()
+    # Statistic.objects.all().delete()
+    # StatisticInstance.objects.all().delete()
+    # DerivedStatistic.objects.all().delete()
+    # Character.objects.all().delete()
+    # Campaign.objects.all().delete()
+    # Effect.objects.all().delete()
+    # Action.objects.all().delete()
+    # Class.objects.all().delete()
+    # ClassCollection.objects.all().delete()
+    # Currency.objects.all().delete()
+    # InventorySet.objects.all().delete()
+    # CurrencyQuantity.objects.all().delete()
+    # EquipableItem.objects.all().delete()
+    # Item.objects.all().delete()
 
     beta_rule_set = RuleSet(name = 'Slipstream BETA')
     beta_rule_set.save()
@@ -318,6 +361,30 @@ def populate(request):
             selection_order = 4)
     guile_stat.save()
 
+    #derived stats
+    hit_points_stat = DerivedStatistic(
+            rule_set = beta_rule_set,
+            name = 'hit points',
+            description = '',
+            selection_order = 1,
+            base_statistic = guts_stat,
+            multiplier = 2,
+            depleatable = True,
+            always_instantiated = True,
+            secondary = False)
+    hit_points_stat.save()
+            
+    armor_class_stat = DerivedStatistic(
+            rule_set = beta_rule_set,
+            name = 'armor class',
+            description = '',
+            selection_order = 2,
+            base_statistic = None,
+            depleatable = False,
+            always_instantiated = True,
+            secondary = False)       
+    armor_class_stat.save()
+            
     #Effects
     zoltran_radiation_immunity_effect = Effect(
             rule_set = beta_rule_set,            
@@ -325,6 +392,34 @@ def populate(request):
             description = 'The Zoltran people are immune to the effects of radiation poisoning.',
             icon_url = 'zoltran_radiation.png')
     zoltran_radiation_immunity_effect.save()
+
+
+
+    #ItemSlots
+    dominant_hand_slot = ItemSlot(
+            rule_set = beta_rule_set,
+            name = 'dominant hand')
+    dominant_hand_slot.save()
+
+    nondominant_hand_slot = ItemSlot(
+            rule_set = beta_rule_set,
+            name = 'nondominant hand')
+    nondominant_hand_slot.save()
+
+    feet_slot = ItemSlot(
+            rule_set = beta_rule_set,
+            name = 'feet')
+    feet_slot.save()
+
+    torso_slot = ItemSlot(
+            rule_set = beta_rule_set,
+            name = 'torso')
+    torso_slot.save()
+
+    head_slot = ItemSlot(
+            rule_set = beta_rule_set,
+            name = 'head')
+    head_slot.save()
 
     #ClassCollection
 
@@ -359,6 +454,12 @@ def populate(request):
         statistic_modifiers = p10p10p10p10)
     human_race.save()
 
+    human_race.slots.add(dominant_hand_slot)
+    human_race.slots.add(nondominant_hand_slot)
+    human_race.slots.add(feet_slot)
+    human_race.slots.add(torso_slot)
+    human_race.slots.add(head_slot)
+
     p20p20p0p0 = StatisticInstanceSet()
     p20p20p0p0.save()    
     p20p20p0p0.set_modifier(guts_stat, 20)
@@ -373,12 +474,18 @@ def populate(request):
         statistic_modifiers = p20p20p0p0)
     mantis_race.save()
 
+    mantis_race.slots.add(nondominant_hand_slot)
+    mantis_race.slots.add(nondominant_hand_slot)
+    mantis_race.slots.add(torso_slot)
+    mantis_race.slots.add(head_slot)
+
     p10p10p20p0 = StatisticInstanceSet()
     p10p10p20p0.save()    
     p10p10p20p0.set_modifier(guts_stat, 10)
     p10p10p20p0.set_modifier(gusto_stat, 10)
     p10p10p20p0.set_modifier(gumption_stat, 20)
     p10p10p20p0.save()
+
 
     zoltran_race = Class(
         rule_set = beta_rule_set,
@@ -388,6 +495,12 @@ def populate(request):
 
     zoltran_race.save()
     zoltran_race.class_effects.add(zoltran_radiation_immunity_effect);
+
+    zoltran_race.slots.add(dominant_hand_slot)
+    zoltran_race.slots.add(dominant_hand_slot)
+    zoltran_race.slots.add(feet_slot)
+    zoltran_race.slots.add(torso_slot)
+    zoltran_race.slots.add(head_slot)
     
     #Classes
     conartist_class = Class(
@@ -433,8 +546,28 @@ def populate(request):
         count = 200)
     two_hundred_galactic_credits.save()
     default_inventory_set.currency_quantities.add(two_hundred_galactic_credits)
-    default_inventory_set.save()
+
+    #actions
+    laser_pistol_shoot_action = Action(
+        rule_set = beta_rule_set,
+        name = 'Shoot',
+        icon_url = 'laser_pistol.png',
+        description = "Shoot your laser pistol at a target.",       
+        associated_statistic = guts_stat)
+    laser_pistol_shoot_action.save()
     
+    laser_pistol = EquipableItem(
+        rule_set = beta_rule_set,
+        name = "laser pistol",
+        description = "standard issue federation laser pistol",
+        icon_url = 'laser_pistol.png',)
+    laser_pistol.save()
+    laser_pistol.actions.add(laser_pistol_shoot_action)
+    laser_pistol.slots.add(dominant_hand_slot)
+    default_inventory_set.items.add(laser_pistol)
+
+    default_inventory_set.save()
+
     beta_rule_set.default_inventory_set = default_inventory_set
     beta_rule_set.save()
 
@@ -442,11 +575,13 @@ def populate(request):
     punch_action = Action(
         rule_set = beta_rule_set,
         name = 'Punch',
-        icon_url = 'galactic_credits.png',
+        icon_url = 'punch.png',
         description = "Punch a guy in the face",       
         associated_statistic = guts_stat)
     punch_action.save()
     beta_rule_set.basic_actions.add(punch_action)
     beta_rule_set.save()
     
+    
+
     return HttpResponse("success, I guess.")

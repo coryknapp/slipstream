@@ -5,39 +5,13 @@
 {% block script %}
 
 <script src="/static/js/vue.js" charset="utf-8"></script>
-
-{% include "rules.html" %}
+<script charset="utf-8">
+	{% include "rules.js" %}
+</script>
 
 <script type="text/javascript">
 
-character = {
-	name: "{{character.name}}",
-	generated_description: "{{character.generated_description}}",
-};
-
-character.base_statistics = {
-	{% for bs in character.base_statistics.statistic_modifiers.all %}
-		{{bs.statistic.pk}} : {{bs.value}},
-	{% endfor %}
-};
-
-character.effects = [
-	{% for e in character.effects.all %}
-		{{e.pk}},
-	{% endfor %}
-];
-
-character.classes = [
-	{% for c in character.classes.all %}
-		{{c.pk}},
-	{% endfor %}
-];
-
-character.currency_quantity = {
-	{% for cq in character.inventory_set.currency_quantities.all %}
-		{{cq.currency.pk}} : {{cq.count}},
-	{% endfor %}
-};
+character = {% include "character.js" %};
 
 onload = function(){
 	app = new Vue({

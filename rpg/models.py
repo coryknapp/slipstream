@@ -40,11 +40,11 @@ class Statistic(models.Model):
     description = models.CharField( max_length=MAX_DESCRIPTION_LENGTH)
     selection_order = models.IntegerField()
 
-    def __unicode__(self):    
-        return 'Statistic: {}'.format(self.name)
-
     class Meta:
         ordering = ['selection_order']
+
+    def __unicode__(self):    
+        return 'Statistic: {}'.format(self.name)
 
 class StatisticInstance(models.Model):
     statistic = models.ForeignKey('Statistic', on_delete=models.CASCADE)

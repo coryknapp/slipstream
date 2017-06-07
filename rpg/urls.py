@@ -32,6 +32,10 @@ urlpatterns = [
         views.session_view,
         name='session'),
 
+    url(r'^modify_character/$',
+        views.modify_character,
+        name='modify_character'),
+
     #???
     url(r'^create_campaign_and_redirect/$',
         views.create_campaign_and_redirect,

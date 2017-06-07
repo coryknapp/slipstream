@@ -10,21 +10,8 @@
 
 
 characters = {
-	{% for c in characters %}
-		{{c.pk}}: {
-			name: "{{c.name}}",
-			generated_description: "{{c.generated_description}}",
-			base_statistics : {
-				{% for bs in c.base_statistics.get_all_modifiers %}
-					{{bs.statistic_pk}} : {{bs.value}},
-				{% endfor %}
-				},
-			classes: [
-				{% for c in c.classes.all %}
-					{{c.pk}},
-				{% endfor %}
-				],
-		},
+	{% for character in characters %}
+		{{character.pk}}: {% include "character.js" %},
 	{% endfor %}
 };
 

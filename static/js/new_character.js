@@ -177,11 +177,11 @@ Vue.component('ClassSelector', {
 					</div>
 				</div>
 
-				<div v-if="selected_class_pk != -1 && effects.length > 0">
+				<div v-if="has_effects">
 					<h5>Effects</h5>
 					<effects-view
 						:rules="rules"
-						:effects_pk_list="effects"></effects-view>	
+						:character="character"></effects-view>	
 				</div>
 
 			</div>
@@ -196,16 +196,11 @@ Vue.component('ClassSelector', {
 
 	computed:{
 		description_text: function(){
+			console.log("this.selected_class_pk", this.selected_class_pk);
 			if(this.selected_class_pk == -1)
 				return "";
 			else
 				return rules.classes[this.selected_class_pk].description;
-		},
-		effects: function(){
-			if(this.selected_class_pk == -1)
-				return [];
-			else
-				return rules.classes[this.selected_class_pk].effects;
 		},
 		modifiers: function(){
 			if(this.selected_class_pk == -1)
@@ -213,9 +208,16 @@ Vue.component('ClassSelector', {
 			else
 				return rules.classes[this.selected_class_pk].modifiers;
 		},
+		has_effects: function(){
+			if(this.selected_class_pk == -1)
+				return false;
+			else
+				return rules.classes[this.selected_class_pk].effects.length > 0;
+		},
 	},
 	methods: {
 		change_selection: function() {
+			console.log("change!!!");
 			//if there was a class amongst the character's classes that has the
 			//same class collection, and delete them
 			//id like to use the Array.filter function, but there is just too many
@@ -229,6 +231,7 @@ Vue.component('ClassSelector', {
 			}
 
 			this.character.classes.push(this.selected_class_pk);
+			console.log("this.character.classes",this.character.classes);
 		},
 	}
 

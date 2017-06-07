@@ -58,3 +58,20 @@ img.currencies-icon{
 	width: 18pt;
 	height: 18pt;
 }
+
+img.items-icon{
+	width: 48pt;
+	height: 48pt;
+}
+
+img.items-unequipped-icon{
+	width: 48pt;
+	height: 48pt;
+	opacity: 0.5;
+}
+
+img.items-equipped-icon{
+	width: 48pt;
+	height: 48pt;
+	opacity: 1.0;
+}
