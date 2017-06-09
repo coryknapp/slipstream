@@ -44,9 +44,4 @@ urlpatterns = [
     url(r'^create_character/$',
         views.create_character,
         name='create_character'),
-
-
-    #for debugging
-    url(r'^pop/$', views.populate, name='pop'),
-    
 ]
