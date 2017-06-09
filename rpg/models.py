@@ -58,7 +58,7 @@ class StatisticInstanceSet(models.Model):
     a set of statistics instances.  For example a set of the stat modifiers
     bestowed on a player by a class or effect.
     """
-    statistic_modifiers = models.ManyToManyField(StatisticInstance)    
+    statistic_modifiers = models.ManyToManyField('StatisticInstance')    
 
     def set_modifier(self, stat_object, value):
         #try to get the stat out of our list (it may or may not exist)
@@ -324,4 +324,3 @@ class CharacterItemSlot(models.Model):
     character = models.ForeignKey('Character', on_delete=models.CASCADE)
     item_slot = models.ForeignKey('ItemSlot', on_delete=models.CASCADE)
     item = models.ForeignKey('Item', null=True, on_delete=models.CASCADE)
-
