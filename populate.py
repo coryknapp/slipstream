@@ -261,32 +261,31 @@ laser_pistol_shoot_action = Action(
     associated_statistic = guts_stat)
 laser_pistol_shoot_action.save()
 
-laser_pistol = EquipableItem(
+#Items
+
+laser_pistol_item = EquipableItem(
     rule_set = beta_rule_set,
     name = "laser pistol",
     description = "standard issue federation laser pistol",
     icon_url = 'laser_pistol.png',)
-laser_pistol.save()
-laser_pistol.actions.add(laser_pistol_shoot_action)
-laser_pistol.slots.add(dominant_hand_slot)
-default_inventory_set.items.add(laser_pistol)
+laser_pistol_item.save()
+laser_pistol_item.actions.add(laser_pistol_shoot_action)
+laser_pistol_item.slots.add(dominant_hand_slot)
+default_inventory_set.items.add(laser_pistol_item)
+
+space_helmet_item = EquipableItem(
+    rule_set = beta_rule_set,
+    name = "space helmet",
+    description = "standard issue federation space helmet",
+    icon_url = 'space_helmet.png',)
+space_helmet_item.save()
+space_helmet_item.actions.add(laser_pistol_shoot_action)
+space_helmet_item.slots.add(head_slot)
+default_inventory_set.items.add(space_helmet_item)
 
 default_inventory_set.save()
 
 beta_rule_set.default_inventory_set = default_inventory_set
 beta_rule_set.save()
-
-#actions
-punch_action = Action(
-    rule_set = beta_rule_set,
-    name = 'Punch',
-    icon_url = 'punch.png',
-    description = "Punch a guy in the face",       
-    associated_statistic = guts_stat)
-punch_action.save()
-beta_rule_set.basic_actions.add(punch_action)
-beta_rule_set.save()
-
-
 
 print("success, I guess.")

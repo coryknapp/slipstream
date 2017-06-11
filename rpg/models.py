@@ -59,6 +59,7 @@ class StatisticInstanceSet(models.Model):
     bestowed on a player by a class or effect.
     """
     statistic_modifiers = models.ManyToManyField('StatisticInstance')    
+    derived_statistic_modifiers = models.ManyToManyField('DerivedStatistic')    
 
     def set_modifier(self, stat_object, value):
         #try to get the stat out of our list (it may or may not exist)
