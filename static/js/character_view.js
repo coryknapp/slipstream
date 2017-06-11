@@ -6,6 +6,7 @@ function reset_character_changes() {
 	character_changes = {
 		items_equipped: [],
 		items_unequipped: [],
+		derived_statistic: {}
 	};
 }
 reset_character_changes();
@@ -546,7 +547,10 @@ Vue.component('DerivedStatisticSummaryCard', {
 	<div>
 		{{ rules.derived_statistics[s_pk].name }}: 
 		{{ value_text }}
-
+		<derived-statistic-gm-control
+			:s_pk="s_pk"
+			:rules="rules"
+			:character="character"></derived-statistic-gm-control>
 	</div>
 	`,
 	

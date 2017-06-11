@@ -127,6 +127,7 @@ def modify_character(request):
 
     items_equipped = mods['items_equipped']
     items_unequipped = mods['items_unequipped']
+    derived_statistic = mods['derived_statistic']
 
     for item_pk in items_unequipped:
         item = EquipableItem.objects.get(pk = item_pk)
@@ -147,6 +148,15 @@ def modify_character(request):
                     item_slot = slot)
             cis.item = item
             cis.save()
+
+    for k, v in derived_statistic.iteritems():
+        dsi = DerivedStatisticInstance.objects.get(
+                character_id = character_pk,
+                statistic_id = k
+                )
+        dsi.depleted_value = v;
+        dsi.save()
+                
 
     return JsonResponse({})
 
