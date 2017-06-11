@@ -14,6 +14,7 @@ from models import Item
 from models import EquipableItem
 from models import ItemSlot
 from models import CharacterItemSlot
+from models import DerivedStatisticInstance
 
 
 # Register your models here.
@@ -31,3 +32,4 @@ admin.site.register(Item)
 admin.site.register(EquipableItem)
 admin.site.register(ItemSlot)
 admin.site.register(CharacterItemSlot)
+admin.site.register(DerivedStatisticInstance)

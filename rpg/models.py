@@ -91,6 +91,40 @@ class StatisticInstanceSet(models.Model):
                 'value' : sm.value
                 })
         return sm_list
+
+    def set_derived_modifier_bonus(self, stat_object, value):
+        #try to get the stat out of our list (it may or may not exist)
+        try:
+            stat_instance = self.derived_statistic_modifiers.get(
+                    statistic=stat_object)
+            stat_instance.value = value
+            stat_instance.save()
+        except StatisticInstance.DoesNotExist:
+            self.statistic_modifiers.create(statistic=stat_object, value=value)
+
+    def get_derived_modifier_bonus(self, stat_object):
+        #try to get the stat out of our list (it may or may not exist)
+        try:
+            stat_instance = self.statistic_modifiers.get(statistic=stat_object)
+            return stat_instance.value
+        except StatisticInstance.DoesNotExist:
+            return 0
+
+    @property 
+    def get_derived_modifier_bonuses(self):
+        """
+        get a json representation off all stat instances associated with this
+        class, so we can dump it into a template
+        """
+        sm_list = []
+        for sm in self.statistic_modifiers.all():
+            sm_list.append({
+                'statistic_pk' : sm.statistic.pk,
+                'value' : sm.value
+                })
+        return sm_list
+
+
     def __unicode__(self):    
         sm_text = ""
         for sm in self.statistic_modifiers.all():
@@ -106,6 +140,10 @@ class DerivedStatistic(models.Model):
     description = models.CharField( max_length=MAX_DESCRIPTION_LENGTH)
     selection_order = models.IntegerField()
 
+    """
+    the base statistic is used to calculate the value.  if it's null, the value is
+    assumed to be zero
+    """
     base_statistic = models.ForeignKey(
             'Statistic',
             on_delete=models.CASCADE,
@@ -114,7 +152,6 @@ class DerivedStatistic(models.Model):
 
     #unfortunately a lot of the logic here is implemented by a bunch of
     #flags that control how the front end handles display
-    
     depleatable = models.BooleanField(default=False)
     always_instantiated = models.BooleanField(default=False)
 
@@ -127,15 +164,26 @@ class DerivedStatistic(models.Model):
         ordering = ['selection_order']
 
 class DerivedStatisticInstance(models.Model):
+    """
+    characters can be associated with a derived statistic through
+    classes.  In the case of statitics that are depleteable, we need
+    to track that value with this class.
+    DerivedStatisticInstances are (currently) only created for depleteable
+    stats, and always_instantiated stats
+    """
     character = models.ForeignKey('Character', on_delete=models.CASCADE)
     statistic = models.ForeignKey('DerivedStatistic', on_delete=models.CASCADE)
     depleted_value = models.IntegerField(default=0)
+    def maximize(self):
+        print(self.character.base_statistics.get_modifier(self.statistic.base_statistic))
+        print(self.statistic.multiplier)
+        self.depleted_value = self.character.base_statistics.get_modifier(
+                self.statistic.base_statistic
+                ) * self.statistic.multiplier
+        self.save()
 
-    def value(self):
-        if self.statistic.base_statistic:
-            return 0
-        max_value = self.character.statistics.get_modifier(statistic.base_statistic).value
-            #statistic.multiplier;
+    def __unicode__(self):    
+        return "{}'s {}".format(self.character.name, self.statistic.name)
 
 class Character(models.Model):
     owning_user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -303,12 +351,15 @@ class Item(models.Model):
 class EquipableItem(Item):
 
     slots = models.ManyToManyField('ItemSlot')
-    
     actions = models.ManyToManyField('Action');
+    statistic_modifiers = models.ForeignKey(
+            'StatisticInstanceSet',
+            null=True,
+            on_delete=models.CASCADE)  
 
 class ItemSlot(models.Model):
     """
-    item slots describe 
+    item slots describe where on a character an item is equipped
     """
     rule_set = models.ForeignKey('RuleSet', on_delete=models.CASCADE)
     name = models.CharField(max_length=MAX_NAME_LENGTH)

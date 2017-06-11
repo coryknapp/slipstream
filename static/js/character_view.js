@@ -132,17 +132,8 @@ Vue.component('CharacterView', {
 				<small class="text-muted">{{character.generated_description}}</small>
 			</h1>
 
+
 			<h2>Statistics</h2>
-			<div class="row">
-				<div class="col-md-2" v-for="s_pk in rules.statistics_order">
-
-					<statistic-summary-card
-							:s_pk="s_pk"
-							:rules="rules"
-							:character="character"></statistic-summary-card>
-				</div>
-			</div>
-
 			<div class="row">
 				<div
 					class="col-md-2"
@@ -154,6 +145,16 @@ Vue.component('CharacterView', {
 							:character="character"></derived-statistic-summary-card>
 				</div>
 			</div>
+			<div class="row">
+				<div class="col-md-2" v-for="s_pk in rules.statistics_order">
+
+					<statistic-summary-card
+							:s_pk="s_pk"
+							:rules="rules"
+							:character="character"></statistic-summary-card>
+				</div>
+			</div>
+
 
 			<h2>Effects</h2>
 			<effects-view

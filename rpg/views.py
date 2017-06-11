@@ -192,21 +192,9 @@ def new_character_view(request):
             'classes' : Class.objects.filter(collection = cc)
             })
 
-    stat_list = Statistic.objects.filter(
-            rule_set=rule_set
-            ).order_by('selection_order')
-    
-    #effects TODO only send out effects that are to be used (as in effects that
-    #part of a race or class)
-    effects_list = Effect.objects.filter(rule_set=rule_set)
-    
-
     context = {
         'rule_set' : rule_set,
-        'stat_list': stat_list,
-        'effects_list' : effects_list,
         'class_collections': class_collections,
-        'class_collections_size': len(class_collections),        
         'campaign': campaign,
     }
 
@@ -269,12 +257,14 @@ def create_character(request):
 
     #set up a new DerivedStatisticInstance for every always_instantiated
     #DerivedStatistic
-    for ds in DerivedStatistic.objects.filter(rule_set=rule_set, always_instantiated=True):
+    for ds in DerivedStatistic.objects.filter(
+            rule_set=rule_set,
+            always_instantiated=True):
         dsi = DerivedStatisticInstance(
                 character=new_character,
                 statistic=ds)
         if dsi.statistic.depleatable:
-            dsi.depleted_value = dsi.value()
+            dsi.maximize()
         dsi.save()
 
     #add the classes to the character, and build the generated description
