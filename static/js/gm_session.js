@@ -1,24 +1,27 @@
 
 //cache character changes so we can submit it batches
-function reset_character_changes() {
-	character_changes = {
-		items_equipped: [],
-		items_unequipped: [],
-		derived_statistic: {},
-	};
+function gm_reset_character_changes() {
+	gm_character_changes = {};
+	var keys = Object.getOwnPropertyNames(characters);
+	for(var i = 0; i < keys.length; i++){
+		gm_character_changes[keys[i]] = {
+			items_equipped: [],
+			items_unequipped: [],
+			derived_statistic: {},
+		};
+	}
 };
 
-reset_character_changes();
+gm_reset_character_changes();
 
 function gm_submit_character_changes(character_pk){
-	$.post("/rpg/modify_character/",
+	$.post("/rpg/gm_modify_characters/",
 		{
-			character_pk: character_pk,
-			mods: JSON.stringify(character_changes),
+			payload: JSON.stringify(gm_character_changes),
 		   	'csrfmiddlewaretoken': getCookie('csrftoken'),
 		},
 		function(response){
-			reset_character_changes();
+			gm_reset_character_changes();
 		},
 	);
 };
@@ -50,17 +53,17 @@ Vue.component('DerivedStatisticGmControl', {
 	methods: {
 		increment: function(){
 			this.character.derived_statistics[this.s_pk]++;
-			character_changes.derived_statistic[this.s_pk] = 
+			gm_character_changes[this.character.pk].derived_statistic[this.s_pk] = 
 				this.character.derived_statistics[this.s_pk];
-			gm_submit_character_changes(this.character.pk);
+			gm_submit_character_changes();
 			//TODO implement a timer to wait a second before sending
 		},
 
 		decrement: function(){
 			this.character.derived_statistics[this.s_pk]--;
-			character_changes.derived_statistic[this.s_pk] = 
+			gm_character_changes[this.character.pk].derived_statistic[this.s_pk] = 
 				this.character.derived_statistics[this.s_pk];
-			gm_submit_character_changes(this.character.pk);
+			gm_submit_character_changes();
 			//TODO implement a timer to wait a second before sending
 		},
 	},

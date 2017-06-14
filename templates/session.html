@@ -11,7 +11,11 @@
 
 <script type="text/javascript">
 
-character = {% include "character.js" %};
+characters = {
+	{{character.pk}}:{% include "character.js" %},
+}
+
+character_pk = {{character.pk}};
 
 onload = function(){
 	app = new Vue({
@@ -19,7 +23,8 @@ onload = function(){
 
 		data: {
 			rules : rules,
-			character: character,
+			characters: characters,
+			character_pk: character_pk,
 			
 		},
 	});
@@ -36,7 +41,7 @@ onload = function(){
 	<div id="app">
 		<character-view
 			:rules="rules"
-			:character="character"></character-view>
+			:character="characters[character_pk]"></character-view>
 	</div> {#end app#}
 </div>
 {% endblock %}

@@ -11,11 +11,10 @@ function reset_character_changes() {
 }
 reset_character_changes();
 
-function submit_character_changes(){
-	console.log("character.pk", character.pk);
+function submit_character_changes(character_pk){
 	$.post("/rpg/modify_character/",
 		{
-			character_pk: character.pk,
+			character_pk: character_pk,
 			mods: JSON.stringify(character_changes),
 		   	'csrfmiddlewaretoken': getCookie('csrftoken'),
 		},
@@ -25,65 +24,63 @@ function submit_character_changes(){
 	);
 };
 
-function equip_item(i_pk){
+function equip_item(i_pk, character_pk){
+	console.log("character_pk", character_pk);
 	//call unequip so that the proper triggers happen.
 	//only need to check for one slot, because unequip_item will figure out what to do
 	if(rules.equipable_items[i_pk].slots[0]){
-		unequip_item(i_pk);
+		unequip_item(i_pk, character_pk);
 	}
 	for(var i=0; i<rules.equipable_items[i_pk].slots.length; i++){
-		character.equipped_items[
+		characters[character_pk].equipped_items[
 			rules.equipable_items[i_pk].slots[i]
 		] = i_pk;
 	}
 	character_changes.items_equipped.push(i_pk);
 };
 
-function unequip_item(i_pk){
+function unequip_item(i_pk, character_pk){
+	console.log("character_pk", character_pk);
 	for(var i=0; i<rules.equipable_items[i_pk].slots.length; i++){
-		character.equipped_items[
+		characters[character_pk].equipped_items[
 			rules.equipable_items[i_pk].slots[i]
 		] = false;
 	}
 	character_changes.items_unequipped.push(i_pk);
 };
 
-/*
- * card_with_model_template
- * a lot of these templates have largely the same format so this function
- * generates those templates with a few paramters
- */
+card_with_model_template = '<div></div>'
 
-function card_with_model_template(
-	card_html, // the template html for the card
-	model_title, //header of the popup
-	model_body, //body of the popup, can be a string or array someday TODO
-	){
-	//each card/model pair needs to have a unique id for internal use.
-	if(typeof unique_global_counter === 'undefined'){
-		unique_global_counter = 0;
-	}
-	unique_global_counter++;
-	
-	if(typeof model_body === 'string') 
-		var final_model_body = '<div class="modal-body">'+model_body+'</div>';
-	else{ //hopefully type of is a array
-		var final_model_body = '';
-		for(var i=0; i<model_body.length; i++){
-			final_model_body += '<div class="modal-body">'+model_body[i]+'</div>';
+Vue.component('StandardIconCardWithModel', {
+	props: {
+		unique_id : String,
+		icon_image_name : String,
+		icon_css_class: {
+			type: String,
+			required: false,
+		},
+		model_title : {
+			type: String,
+			required: false,
+		},
+		model_body : {
+			type: String,
+			required: false,
 		}
-	}
-
-	return `
+	},
+	
+	template: `
 		<div class="card">
-			<a :id="'_`+unique_global_counter+`_model_trigger'"
+			<a :id="unique_id + '_model_trigger'"
 				data-toggle="modal"
-				:data-target="'#_`+unique_global_counter+`_model'">
-				`+card_html+`
+				:data-target="'#' + unique_id + '_model'">
+				<img
+					:src="'/static/images/' + icon_image_name"
+					:class="icon_css_class ? icon_css_class : 'effects-icon'">
 			</a>
 			<div
 				class="modal fade"
-				:id="'_`+unique_global_counter+`_model'"
+				:id="unique_id + '_model'"
 				tabindex="-1"
 				role="dialog"
 				aria-labelledby="exampleModalLabel"
@@ -92,20 +89,23 @@ function card_with_model_template(
 					<div class="modal-content">
 						<div class="modal-header">
 							<h3 class="modal-title" id="exampleModalLabel">
-								`+model_title+`
+								{{model_title}}
 							</h3>
 						</div>
-						<div class="modal-body">
-							`+final_model_body+`
+						<div v-if="model_body" class="modal-body">
+							{{ model_body }}
 						</div>
+						<div v-else class="modal-body">
+							<slot></slot>
+						</div>
+
 					</div>
 				</div>
 
 			</div>
 
-		</div>`;
-	
-}
+		</div>`,
+});
 
 
 /*
@@ -194,7 +194,8 @@ Vue.component('EffectsView', {
 			<div class v-for="e_pk in effects_pk_list">
 				<effect-summary-card
 					:e_pk="e_pk"
-					:rules="rules"></effect-summary-card>
+					:rules="rules"
+					:character_pk="character.pk"></effect-summary-card>
 			</div>
 		</div>
 `,
@@ -220,16 +221,33 @@ Vue.component('EffectsView', {
 Vue.component('EffectSummaryCard', {
 	props: {
 		e_pk : Number,
+		character_pk: Number,
 		rules : Object,
 	},
 
-	template: card_with_model_template(
-				`<img
-					:src="'/static/images/'+rules.effects[e_pk].icon_url"
-					class="effects-icon">`,
-				`{{rules.effects[e_pk].name}}`,
-				`{{rules.effects[e_pk].description}}`
-		),
+	computed: {
+		unique_id: function() {
+			return `c`+this.character_pk+`e`+this.e_pk;
+		},
+		icon_image_name: function() {
+			return `<img
+						:src="'/static/images/'images`+
+						this.rules.effects[e_pk].icon_url`"
+						class="effects-icon">`;
+		},
+		title: function() {
+			return this.rules.effects[e_pk].name;
+		},
+		description: function() {
+			return this.rules.effects[e_pk].description;
+		},
+	},
+
+	template: `<standard-icon-card-with-model
+					:unique_id="unique_id"
+					:icon_image_name="icon_image_name"
+					:model_title="title"
+					:model_body="description" ></standard-icon-card-with-model>`,
 });
 
 Vue.component('ActionsView', {
@@ -243,7 +261,8 @@ Vue.component('ActionsView', {
 			<div class v-for="a_pk in actions_pk_list">
 				<action-summary-card
 					:a_pk="a_pk"
-					:rules="rules"></action-summary-card>
+					:rules="rules"
+					:character_pk="character.pk"></action-summary-card>
 			</div>
 		</div>
 `,
@@ -268,16 +287,30 @@ Vue.component('ActionsView', {
 Vue.component('ActionSummaryCard', {
 	props: {
 		a_pk : Number,
+		character_pk: Number,		
 		rules : Object,
 	},
+	
+	computed: {
+		unique_id: function() {
+			return `c`+this.character_pk+`a`+this.a_pk;
+		},
+		icon_image_name: function() {
+			return this.rules.actions[this.a_pk].icon_url;
+		},
+		title: function() {
+			return this.rules.actions[this.a_pk].name;
+		},
+		description: function() {
+			return this.rules.actions[this.a_pk].description;
+		},
+	},
 
-	template: card_with_model_template(
-		`<img
-			:src="'/static/images/'+rules.actions[a_pk].icon_url"
-			class="actions-icon">`,
-		`{{rules.actions[a_pk].name}}`,
-		`{{rules.actions[a_pk].description}}`,
-	),
+	template: `<standard-icon-card-with-model
+					:unique_id="unique_id"
+					:icon_image_name="icon_image_name"
+					:model_title="title"
+					:model_body="description" ></standard-icon-card-with-model>`,
 });
 
 
@@ -320,18 +353,26 @@ Vue.component('CurrencySummaryCard', {
 		character: Object,		
 	},
 
-	template: card_with_model_template(
-				`<img
-					:src="'/static/images/'+rules.currencies[c_pk].icon_url"
+	computed: {
+		unique_id: function() {
+			return `c`+this.character_pk+`a`+this.e_pk;
+		},
+		card_html: function() {
+			return `<img
+					:src="/static/images/`+this.rules.currencies[c_pk].icon_url+`"
 					class="currencies-icon">
-				X {{character.currency_quantity[c_pk]}}`,
-				`<img
-					:src="'/static/images/'+rules.currencies[c_pk].icon_url"
-					class="currencies-icon">
-				{{rules.currencies[c_pk].name}}`,
-				`{{rules.currencies[c_pk].description}}`
-	),
-	
+				X`+this.character.currency_quantity[c_pk];
+		},
+		model_title: function() {
+			return this.rules.currencies[c_pk].name;
+		},
+		model_body: function() {
+			return this.rules.currencies[c_pk].description;
+		},
+	},
+
+	template: card_with_model_template,
+
 	data: function () {
 		return {
 		};
@@ -348,14 +389,17 @@ Vue.component('ItemSummaryCard', {
 
 	methods: {
 		unequip_item: function(){
-			console.log("UN");
-			unequip_item(this.i_pk);
-			submit_character_changes();
+			console.log("this.character", this.character);
+			console.log("this.character.pk", this.character.pk);
+			unequip_item(this.i_pk, this.character.pk);
+			submit_character_changes(this.character.pk);
 		},
 
 		equip_item: function(){
-			equip_item(this.i_pk);
-			submit_character_changes();
+			console.log("this.character", this.character);
+			console.log("this.character.pk", this.character.pk);
+			equip_item(this.i_pk, this.character.pk);
+			submit_character_changes(this.character.pk);
 		},
 	},
 
@@ -380,54 +424,51 @@ Vue.component('ItemSummaryCard', {
 			}
 		},
 
-		icon_url: function(){
-			return '/static/images/' + this.rules.items[this.i_pk].icon_url;
-		}
+		icon_image_name: function(){
+			return this.rules.items[this.i_pk].icon_url;
+		},
+
+		unique_id: function() {
+			return `c`+this.character.pk+`i`+this.i_pk;
+		},
+
+		title: function() {
+			return this.rules.items[this.i_pk].name;
+		},
+
 	},
 
-	template: card_with_model_template(
-				`<img
-					:src="icon_url"
-					:class="icon_css_class" />`,
-				`<img
-					:src="icon_url"
-					class="items-icon" />
-				{{rules.items[i_pk].name}}
-				<div v-if="equipable">
-					<div v-if="equipped" class="text-primary">
-						equipped
-					</div>
-					<div v-else class="text-warning">
-						unequipped
-					</div>
-				</div>`,
-				[
-					`{{rules.items[i_pk].description}}`,
-					`<div v-if="equipable">
-						in slots... <br />
-						<div
-							v-for="s_pk in rules.equipable_items[i_pk].slots">
-							{{rules.slots[s_pk].name}}
-							(occupied by
-							{{ character.equipped_items[s_pk] ?
-							rules.items[character.equipped_items[s_pk]].name:
-							 "nothing"}})
-						</div>
-						<button
-							v-if="equipped"
-							class="btn btn-primary"
-							@click="unequip_item">
-								unequip
-						</button>
-						<button
-							v-else
-							class="btn btn-primary"
-							@click="equip_item">
-							equip
-						</button>
-					</div>`,
-				]
-	),
+	template: `
+	<standard-icon-card-with-model
+		:unique_id="unique_id"
+		:icon_image_name="icon_image_name"
+		:icon_css_class="icon_css_class"
+		:model_title="title" >
+		<div v-if="equipable">
+			in slots... <br />
+			<div
+				v-for="s_pk in rules.equipable_items[i_pk].slots">
+				{{rules.slots[s_pk].name}}
+				(occupied by
+				{{ character.equipped_items[this.s_pk] ?
+				rules.items[
+					character.equipped_items[this.s_pk]
+				].name : "nothing" }}
+			</div>
+			<button
+				v-if="equipped"
+				class="btn btn-primary"
+				@click="unequip_item">
+					unequip
+			</button>
+			<button
+				v-else
+				class="btn btn-primary"
+				@click="equip_item">
+				equip
+			</button>
+		</div>
+	</standard-icon-card-with-model>`,
 });
 
 

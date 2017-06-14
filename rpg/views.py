@@ -125,6 +125,19 @@ def modify_character(request):
     character_pk = int(request.POST.get('character_pk'))
     mods = json.loads(request.POST.get('mods'))
 
+    modify_character_sub(character_pk, mods)
+
+    return JsonResponse({})
+
+@login_required
+def gm_modify_characters(request):
+    payload = json.loads(request.POST.get('payload'))
+    for character_pk, mods in payload.items():
+        modify_character_sub(character_pk, mods)
+
+    return JsonResponse({})
+
+def modify_character_sub(character_pk, mods):
     items_equipped = mods['items_equipped']
     items_unequipped = mods['items_unequipped']
     derived_statistic = mods['derived_statistic']
@@ -158,7 +171,6 @@ def modify_character(request):
         dsi.save()
                 
 
-    return JsonResponse({})
 
 @login_required
 def new_character_view(request):

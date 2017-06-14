@@ -38,7 +38,7 @@ onload = function(){
 
 <div class="container">
 	<div id="app">
-		<div v-for="c in characters">
+		<div v-for="(c, c_pk) in characters">
 			<character-view
 				:rules="rules"
 				:character="c"></character-view>

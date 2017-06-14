@@ -36,6 +36,10 @@ urlpatterns = [
         views.modify_character,
         name='modify_character'),
 
+    url(r'^gm_modify_characters/$',
+        views.gm_modify_characters,
+        name='gm_modify_characters'),
+
     #???
     url(r'^create_campaign_and_redirect/$',
         views.create_campaign_and_redirect,
