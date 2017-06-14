@@ -68,7 +68,42 @@ function unequip_item(i_pk, character_pk){
 	character_changes.items_unequipped.push(i_pk);
 };
 
-card_with_model_template = '<div></div>'
+Vue.component('StandardCardWithModel', {
+	props: {
+		unique_id : String,
+	},
+	
+	template: `
+		<div class="card">
+			<a :id="unique_id + '_model_trigger'"
+				data-toggle="modal"
+				:data-target="'#' + unique_id + '_model'">
+				<slot name="card_content"></slot>				
+			</a>
+			<div
+				class="modal fade"
+				:id="unique_id + '_model'"
+				tabindex="-1"
+				role="dialog"
+				aria-labelledby="exampleModalLabel"
+				aria-hidden="true">
+				<div class="modal-dialog" role="document">
+					<div class="modal-content">
+						<div class="modal-header">
+							<slot name="model_title"></slot>				
+						</div>
+						<div class="modal-body">
+							<slot></slot>
+						</div>
+
+					</div>
+				</div>
+
+			</div>
+
+		</div>`,
+});
+
 
 Vue.component('StandardIconCardWithModel', {
 	props: {
@@ -89,41 +124,24 @@ Vue.component('StandardIconCardWithModel', {
 	},
 	
 	template: `
-		<div class="card">
-			<a :id="unique_id + '_model_trigger'"
-				data-toggle="modal"
-				:data-target="'#' + unique_id + '_model'">
+		<standard-card-with-model
+			:unique_id="unique_id">
+			<div slot="card_content">
 				<img
 					:src="'/static/images/' + icon_image_name"
-					:class="icon_css_class ? icon_css_class : 'effects-icon'">
-			</a>
-			<div
-				class="modal fade"
-				:id="unique_id + '_model'"
-				tabindex="-1"
-				role="dialog"
-				aria-labelledby="exampleModalLabel"
-				aria-hidden="true">
-				<div class="modal-dialog" role="document">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h3 class="modal-title" id="exampleModalLabel">
-								{{model_title}}
-							</h3>
-						</div>
-						<div v-if="model_body" class="modal-body">
-							{{ model_body }}
-						</div>
-						<div v-else class="modal-body">
-							<slot></slot>
-						</div>
-
-					</div>
-				</div>
-
+					:class="icon_css_class ? icon_css_class : 'effects-icon'"
+				/>
 			</div>
-
-		</div>`,
+			<div slot="model_title">
+				{{model_title}}
+			</div>
+			<div v-if="model_body" class="modal-body">
+				{{ model_body }}
+			</div>
+			<div v-else class="modal-body">
+				<slot></slot>
+			</div>
+		</standard-card-with-model> `,
 });
 
 
@@ -390,12 +408,22 @@ Vue.component('CurrencySummaryCard', {
 		},
 	},
 
-	template: card_with_model_template,
+	template: `
+	<standard-card-with-model
+		:unique_id="unique_id">
+		<div slot="card_content">,
+			{{card_html}}
+		</div>
+		<div slot="model_title">,
+			{{model_title}}
+		</div>
+		<div slot="model_body">,
+			{{model_body}}
+		</div>
 
-	data: function () {
-		return {
-		};
-	},
+	</standard-card-with-model>
+	`
+
 
 });
 
