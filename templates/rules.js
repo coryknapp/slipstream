@@ -100,7 +100,7 @@ rules.basic_actions = [
 ];
 
 rules.currencies = {
-	{% for c in currencies%}
+	{% for c in rule_set.currency_set.all %}
 		{{c.pk}}: {
 			name: "{{c.name}}",
 			icon_url: "{{c.icon_url}}",
@@ -109,7 +109,7 @@ rules.currencies = {
 };
 
 rules.currency_order = [
-	{% for c in currencies %}
+	{% for c in rule_set.currency_set.all %}
 		{{c.pk}},
 	{% endfor %}
 ];

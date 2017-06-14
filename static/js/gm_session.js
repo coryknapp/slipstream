@@ -36,7 +36,7 @@ Vue.component('DerivedStatisticGmControl', {
 	},
 
 	template: `
-		<span v-if="rules.derived_statistics[s_pk].depleatable">
+		<div v-if="rules.derived_statistics[s_pk].depleatable">
 			<button type="button"
 				class="btn btn-secondary btn-sm"
 				@click="increment">
@@ -48,7 +48,7 @@ Vue.component('DerivedStatisticGmControl', {
 				@click="decrement">	
 				-
 			</button>
-		</span>`,
+		</div>`,
 
 	methods: {
 		increment: function(){

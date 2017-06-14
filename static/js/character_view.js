@@ -394,31 +394,22 @@ Vue.component('CurrencySummaryCard', {
 		unique_id: function() {
 			return `c`+this.character_pk+`a`+this.e_pk;
 		},
-		card_html: function() {
-			return `<img
-					:src="/static/images/`+this.rules.currencies[c_pk].icon_url+`"
-					class="currencies-icon">
-				X`+this.character.currency_quantity[c_pk];
-		},
-		model_title: function() {
-			return this.rules.currencies[c_pk].name;
-		},
-		model_body: function() {
-			return this.rules.currencies[c_pk].description;
-		},
 	},
 
 	template: `
 	<standard-card-with-model
 		:unique_id="unique_id">
 		<div slot="card_content">,
-			{{card_html}}
+			<img
+				:src="'/static/images/'+rules.currencies[this.c_pk].icon_url"
+				class="currencies-icon" />
+				X {{character.currency_quantity[c_pk]}}
 		</div>
 		<div slot="model_title">,
-			{{model_title}}
+			{{rules.currencies[c_pk].name}}
 		</div>
 		<div slot="model_body">,
-			{{model_body}}
+			{{rules.currencies[c_pk].description}}
 		</div>
 
 	</standard-card-with-model>

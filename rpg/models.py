@@ -334,6 +334,9 @@ class Currency(models.Model):
     def __unicode__(self):    
         return '%s' % (self.name)
 
+    class Meta:
+        ordering = ['selection_order']
+
 class CurrencyQuantity(models.Model):
     currency = models.ForeignKey('Currency')
     count = models.IntegerField(default=0)
