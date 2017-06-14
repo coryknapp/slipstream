@@ -566,60 +566,39 @@ Vue.component('StatisticSummaryCard', {
 			return this.signed_number(this.rules.modifier_map[--i]);
 		},
 
+		unique_id: function() {
+			return `c`+this.character.pk+`s`+this.i_pk;
+		},
+
+
 	},
 
 	template: `
-		<a :id="'stat_'+s_pk+'_model_trigger'"
-			data-toggle="modal"
-			:data-target="'#stat_'+s_pk+'_model'">
-
-			<div class="card">
+		<standard-card-with-model
+			:unique_id="unique_id">
+			<div slot="card_content">
 				<h3 class="h5">{{rules.statistics[s_pk].name}}</h3>
 				{{modified_stat}}
 				{{modifier}}
 			</div>
-
-			<div
-				class="modal fade"
-				:id="'stat_'+s_pk+'_model'"
-				tabindex="-1"
-				role="dialog"
-				aria-hidden="true">
-				<div class="modal-dialog" role="document">
-					<div class="modal-content">
-						<div class="modal-header">
-							<h3 class="modal-title">
-								{{rules.statistics[s_pk].name}} {{modified_stat}} {{modifier}}
-							</h3>
-						</div>
-						<div class="modal-body">
-							{{rules.statistics[s_pk].description}}
-							<hr>
-							Base: {{character.base_statistics[s_pk]}} <br/>
-							<span v-for="c_pk in character.classes">
-								<span
-									v-if="rules.classes[c_pk].modifiers[s_pk]">
-									{{signed_number(rules.classes[c_pk].modifiers[s_pk])}}
-									from
-									{{rules.classes[c_pk].name}}
-									{{rules.classes[c_pk].class_collections_name}}
-								</span>
-							</span>
-						</div>
-
-					</div>
-				</div>
-
+			<div slot="model_title">
+				{{rules.statistics[s_pk].name}} {{modified_stat}} {{modifier}}
 			</div>
-
-
-		</a>
-`,
-	
-	data: function () {
-		return {
-		};
-	},
+			<div>
+				{{rules.statistics[s_pk].description}}
+				<hr>
+				Base: {{character.base_statistics[s_pk]}} <br/>
+				<span v-for="c_pk in character.classes">
+					<span
+						v-if="rules.classes[c_pk].modifiers[s_pk]">
+						{{signed_number(rules.classes[c_pk].modifiers[s_pk])}}
+						from
+						{{rules.classes[c_pk].name}}
+						{{rules.classes[c_pk].class_collections_name}}
+					</span>
+				</span>
+			</div>
+		</standard-card-with-model>`,
 
 });
 
