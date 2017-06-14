@@ -25,26 +25,45 @@ function submit_character_changes(character_pk){
 };
 
 function equip_item(i_pk, character_pk){
-	console.log("character_pk", character_pk);
 	//call unequip so that the proper triggers happen.
 	//only need to check for one slot, because unequip_item will figure out what to do
+	//TODO were actually have to do this for every slot in 'item'
 	if(rules.equipable_items[i_pk].slots[0]){
+		console.log("I'm unequiping");
 		unequip_item(i_pk, character_pk);
 	}
+	//make sure the character has all the slots needed to equip this item
+	for(var i=0; i<rules.equipable_items[i_pk].slots.length; i++){
+		console.log("DOOP ",characters[character_pk].equipped_items);
+		console.log("TEST ",characters[character_pk].equipped_items[
+				rules.equipable_items[i_pk].slots[i]
+			]  );
+		if(characters[character_pk].equipped_items[
+				rules.equipable_items[i_pk].slots[i]
+			] == undefined){
+			return false; //the character doesn't have the slot for this item.
+		}
+	}
+	//equip the items.  (will the items slots with the items' pk)
 	for(var i=0; i<rules.equipable_items[i_pk].slots.length; i++){
 		characters[character_pk].equipped_items[
 			rules.equipable_items[i_pk].slots[i]
 		] = i_pk;
 	}
 	character_changes.items_equipped.push(i_pk);
+	return true; //tentatively successful (depending on server response)
 };
 
 function unequip_item(i_pk, character_pk){
-	console.log("character_pk", character_pk);
 	for(var i=0; i<rules.equipable_items[i_pk].slots.length; i++){
-		characters[character_pk].equipped_items[
+		//don't erroneously add slot's the characters
+		if(characters[character_pk].equipped_items[
 			rules.equipable_items[i_pk].slots[i]
-		] = false;
+		]){
+			characters[character_pk].equipped_items[
+				rules.equipable_items[i_pk].slots[i]
+			] = false;
+		}
 	}
 	character_changes.items_unequipped.push(i_pk);
 };
@@ -396,10 +415,11 @@ Vue.component('ItemSummaryCard', {
 		},
 
 		equip_item: function(){
-			console.log("this.character", this.character);
-			console.log("this.character.pk", this.character.pk);
-			equip_item(this.i_pk, this.character.pk);
-			submit_character_changes(this.character.pk);
+			if(equip_item(this.i_pk, this.character.pk))
+				submit_character_changes(this.character.pk);
+			else{
+				alert("This character doesn't know how to wear or hold this.")
+			}
 		},
 	},
 
@@ -410,6 +430,9 @@ Vue.component('ItemSummaryCard', {
 
 		equipped: function(){
 			var slot_pk = this.rules.equipable_items[this.i_pk].slots[0];
+			console.log("slot_pk", slot_pk);
+			if(this.character.equipped_items[slot_pk]  === undefined)
+				return false;
 			return this.character.equipped_items[slot_pk] != false;
 		},
 
